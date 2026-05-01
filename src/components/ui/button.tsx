@@ -11,15 +11,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground hover:bg-[oklch(0.30_0.060_252)]",
+          "bg-primary text-primary-foreground hover:bg-primary/90",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-[oklch(0.91_0.012_78)] ring-1 ring-inset ring-border",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80 ring-1 ring-inset ring-border",
         outline:
           "border border-border bg-card hover:bg-muted text-foreground",
         ghost: "hover:bg-muted text-foreground",
-        soft: "bg-accent text-accent-foreground hover:bg-[oklch(0.90_0.030_25)]",
+        soft: "bg-accent text-accent-foreground hover:bg-accent/85",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-[oklch(0.50_0.150_25)]",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/85",
         link: "text-primary underline underline-offset-4 decoration-1 hover:decoration-2 rounded-none",
       },
       size: {
