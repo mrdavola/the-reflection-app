@@ -2,23 +2,24 @@ import Link from "next/link";
 import { ArrowRight, Mic } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { Button } from "@/components/ui/button";
+import { RippleField } from "@/components/ambient";
 
 export default function MarketingHome() {
   return (
-    <div className="relative">
+    <div className="relative overflow-x-clip">
       <header className="px-6 pt-6 pb-4">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between">
           <Brand href="/" />
           <nav className="flex items-center gap-5">
             <Link
               href="#how"
-              className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline"
+              className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline"
             >
               How it works
             </Link>
             <Link
               href="#educators"
-              className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline"
+              className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline"
             >
               For educators
             </Link>
@@ -37,8 +38,16 @@ export default function MarketingHome() {
 
       <main className="mx-auto w-full max-w-6xl px-6">
         {/* ---------- Hero ---------- */}
-        <section className="grid items-start gap-14 pt-12 pb-20 md:grid-cols-12 md:gap-12 md:pt-20 md:pb-32">
-          <div className="md:col-span-7">
+        <section className="relative grid items-start gap-14 pt-12 pb-20 md:grid-cols-12 md:gap-12 md:pt-20 md:pb-32">
+          {/* Faint ripple in upper-right of hero — a hint, not full bleed. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -top-12 -right-32 h-[28rem] w-[28rem] overflow-hidden md:-right-16"
+          >
+            <RippleField intensity={0.04} />
+          </div>
+
+          <div className="relative md:col-span-7">
             <p className="margin-note mb-6 not-italic uppercase tracking-[0.18em] text-[0.7rem] text-muted-foreground">
               No.&nbsp;01 — A reflection coach
             </p>
@@ -83,8 +92,8 @@ export default function MarketingHome() {
             </dl>
           </div>
 
-          {/* Hero sample — quiet, paper-stacked. */}
-          <aside className="md:col-span-5">
+          {/* Hero sample — quiet, hand-stacked on dark. */}
+          <aside className="relative md:col-span-5">
             <SampleStack />
           </aside>
         </section>
@@ -212,7 +221,7 @@ export default function MarketingHome() {
       <footer className="border-t border-border px-6 py-10 text-xs text-muted-foreground">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3">
           <Brand href="/" className="text-sm" />
-          <p className="font-display italic text-[0.875rem]">
+          <p className="font-display italic text-[0.875rem] text-foreground/70">
             Reflection is a skill. We make it tractable.
           </p>
         </div>
@@ -259,17 +268,31 @@ function Step({
 function Bullet({ k, v }: { k: string; v: string }) {
   return (
     <li className="grid grid-cols-[8.5rem_1fr] gap-x-5 border-t border-border pt-3">
-      <span className="margin-note pt-0.5 text-foreground">{k}</span>
+      <span className="margin-note pt-0.5 not-italic uppercase tracking-[0.16em] text-[0.7rem] text-foreground">
+        {k}
+      </span>
       <span className="text-[0.9375rem] text-foreground/75">{v}</span>
     </li>
   );
 }
 
+/**
+ * SampleStack — three hand-stacked cards on dark.
+ * Card 1: the prompt (Question 01)
+ * Card 2: the recording moment, sky-glow mic
+ * Card 3: the coach's note, sunny accent score
+ */
 function SampleStack() {
   return (
     <div className="relative">
-      {/* Card 1 — the prompt. */}
-      <div className="rounded-lg border border-border bg-card p-7 shadow-[0_1px_0_oklch(0.88_0.010_78),0_24px_60px_-32px_oklch(0.30_0.030_252_/_0.18)]">
+      {/* Card 1 — the prompt. Elevated card surface with a subtle sky-glow halo. */}
+      <div
+        className="rounded-lg border border-border bg-card p-7 transition-transform duration-300 hover:-translate-y-0.5"
+        style={{
+          boxShadow:
+            "0 24px 60px -32px var(--color-ring), 0 0 0 1px color-mix(in oklch, var(--color-primary) 6%, transparent)",
+        }}
+      >
         <p className="margin-note text-[0.7rem] uppercase tracking-[0.16em] not-italic text-muted-foreground">
           Question 01 of 03 · Self-authorship
         </p>
@@ -280,14 +303,20 @@ function SampleStack() {
       </div>
 
       {/* Card 2 — recording. Slight overlap to feel hand-stacked. */}
-      <div className="relative -mt-3 ml-6 rounded-lg border border-border bg-card p-5 shadow-[0_1px_0_oklch(0.88_0.010_78)]">
+      <div
+        className="relative -mt-3 ml-6 rounded-lg border border-border bg-card p-5 transition-transform duration-300 hover:-translate-y-0.5"
+        style={{
+          boxShadow: "0 18px 40px -24px var(--color-ring)",
+        }}
+      >
         <div className="flex items-center gap-4">
-          <span className="grid h-11 w-11 place-items-center rounded-full bg-destructive/10 text-destructive recording-pulse">
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-primary/10 text-primary recording-pulse">
             <Mic className="h-4 w-4" />
           </span>
           <div className="flex-1">
             <div className="font-mono text-[0.8125rem] tabular-nums text-foreground">
-              0:21 <span className="text-muted-foreground">/ 0:15 minimum</span>
+              0:21{" "}
+              <span className="text-muted-foreground">/ 0:15 minimum</span>
             </div>
             <p className="text-xs text-muted-foreground">
               Keep going if there&rsquo;s more. Tap to finish.
@@ -296,13 +325,21 @@ function SampleStack() {
         </div>
       </div>
 
-      {/* Card 3 — feedback. */}
-      <div className="relative -mt-3 -ml-3 rounded-lg border border-border bg-card p-6 shadow-[0_1px_0_oklch(0.88_0.010_78)]">
+      {/* Card 3 — feedback. Sunny accent for "Strong" rating. */}
+      <div
+        className="relative -mt-3 -ml-3 rounded-lg border border-border bg-card p-6 transition-transform duration-300 hover:-translate-y-0.5"
+        style={{
+          boxShadow: "0 18px 40px -24px var(--color-ring)",
+        }}
+      >
         <div className="flex items-baseline justify-between gap-3">
           <p className="margin-note text-[0.7rem] uppercase tracking-[0.16em] not-italic text-muted-foreground">
             Coach&rsquo;s note
           </p>
-          <span className="font-display text-[0.8125rem] text-[oklch(0.55_0.130_75)]">
+          <span
+            className="font-display text-[0.8125rem]"
+            style={{ color: "var(--color-triage-sunny)" }}
+          >
             Level 4 · Strong
           </span>
         </div>
@@ -317,52 +354,59 @@ function SampleStack() {
   );
 }
 
+/**
+ * DashboardSample — a sticky-note-style triage mini view.
+ * Each row: status dot + name + verbatim quote (italic) + level.
+ * Backgrounds use the four --color-triage-*-bg tokens.
+ */
 function DashboardSample() {
-  const cards: Array<{
+  type Triage = "sunny" | "orange" | "blue" | "rose";
+  const rows: Array<{
     name: string;
-    color: "sunny" | "orange" | "blue";
+    color: Triage;
     level: number;
-    note: string;
+    quote: string;
   }> = [
     {
       name: "Aaliyah",
       color: "sunny",
       level: 4,
-      note: "Names what she&rsquo;ll try next, and why it matters.",
+      quote: "I changed my answer when Dre said the opposite — and his held up.",
     },
     {
       name: "Marcus",
       color: "orange",
       level: 2,
-      note: "Surfaces specific confusion — worth a 2-min check-in.",
+      quote: "I still don't get why we use the second formula instead of the first.",
     },
     {
       name: "Priya",
       color: "sunny",
       level: 3,
-      note: "Connects today&rsquo;s lesson to a real-world question.",
+      quote: "It connects to the news article we read in advisory yesterday.",
     },
     {
       name: "Diego",
       color: "blue",
       level: 1,
-      note: "Short, low-detail. Model a stronger answer aloud tomorrow.",
+      quote: "It was fine.",
     },
   ];
 
-  const dot: Record<typeof cards[number]["color"], string> = {
-    sunny: "bg-[oklch(0.78_0.130_85)]",
-    orange: "bg-[oklch(0.65_0.150_45)]",
-    blue: "bg-[oklch(0.55_0.090_245)]",
-  };
-
   return (
-    <div className="rounded-lg border border-border bg-card p-5">
+    <div
+      className="rounded-lg border border-border bg-card p-5"
+      style={{
+        boxShadow: "0 24px 60px -32px var(--color-ring)",
+      }}
+    >
       <div className="flex items-baseline justify-between">
         <p className="margin-note text-[0.7rem] uppercase tracking-[0.16em] not-italic text-muted-foreground">
           Period 4 · Mr Davola
         </p>
-        <p className="text-[0.7rem] text-muted-foreground tabular-nums">21 students</p>
+        <p className="text-[0.7rem] text-muted-foreground tabular-nums">
+          21 students
+        </p>
       </div>
       <h3 className="mt-3 font-display text-lg leading-snug tracking-tight">
         Most students named a specific moment.{" "}
@@ -370,23 +414,38 @@ function DashboardSample() {
       </h3>
 
       <ul className="mt-5 grid gap-2.5">
-        {cards.map((c) => (
+        {rows.map((r) => (
           <li
-            key={c.name}
-            className="grid grid-cols-[auto_auto_1fr] items-center gap-3 border-t border-border pt-2.5 text-sm"
+            key={r.name}
+            className="rounded-md border border-border/60 p-3 transition-colors"
+            style={{
+              background: `var(--color-triage-${r.color}-bg)`,
+            }}
           >
-            <span
-              aria-hidden
-              className={`h-2.5 w-2.5 rounded-full ${dot[c.color]}`}
-            />
-            <span className="w-20 font-medium tabular-nums">{c.name}</span>
-            <span
-              className="line-clamp-1 text-foreground/70 text-[0.8125rem]"
-              dangerouslySetInnerHTML={{ __html: c.note }}
-            />
-            <span className="col-start-3 -mt-2 hidden text-[0.7rem] text-muted-foreground tabular-nums sm:block">
-              level {c.level}
-            </span>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <span
+                  aria-hidden
+                  className="h-2 w-2 rounded-full"
+                  style={{
+                    background: `var(--color-triage-${r.color})`,
+                    boxShadow: `0 0 8px 0 var(--color-triage-${r.color})`,
+                  }}
+                />
+                <span className="font-mono text-[0.8125rem] tabular-nums text-foreground">
+                  {r.name}
+                </span>
+              </div>
+              <span
+                className="text-[0.7rem] uppercase tracking-[0.14em] tabular-nums"
+                style={{ color: `var(--color-triage-${r.color})` }}
+              >
+                Level {r.level}
+              </span>
+            </div>
+            <p className="mt-1.5 font-display italic text-[0.875rem] leading-snug text-foreground/85">
+              &ldquo;{r.quote}&rdquo;
+            </p>
           </li>
         ))}
       </ul>
