@@ -42,6 +42,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { InsightsLayout, type InsightAction } from "@/components/reflection";
+import { PrintStyles } from "@/components/print-styles";
 import { deriveInsight } from "@/lib/insights";
 import { getFocus } from "@/lib/focus-catalog";
 import { store, useStore } from "@/lib/storage";
@@ -175,8 +176,9 @@ function ReflectionDetail({
   ];
 
   return (
-    <article className="mx-auto max-w-3xl px-4 py-2">
-      <div className="flex items-center justify-between gap-3 print:hidden">
+    <article className="print-surface mx-auto max-w-3xl px-4 py-2">
+      <PrintStyles />
+      <div data-no-print className="flex items-center justify-between gap-3 print:hidden">
         <Button asChild size="sm" variant="ghost" className="-ml-2">
           <Link href="/app">
             <ArrowLeft className="h-4 w-4" />

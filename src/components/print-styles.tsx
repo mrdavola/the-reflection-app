@@ -18,11 +18,12 @@ export function PrintStyles() {
     color: #000000 !important;
   }
 
-  /* Hide app chrome — sidebars, top nav, theme toggles, anything
+  /* Hide app chrome — sidebars, top nav, footer, theme toggles, anything
      marked as no-print. The portfolio page also wraps its non-printing
      UI in [data-no-print]. */
   [data-app-shell-nav],
   [data-app-shell-sidebar],
+  [data-app-shell-footer],
   [data-no-print],
   nav,
   header[data-app-header] {

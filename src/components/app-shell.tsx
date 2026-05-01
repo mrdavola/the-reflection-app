@@ -30,13 +30,16 @@ export function AppShell({ children }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
+      <header
+        data-app-header
+        className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md"
+      >
         <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
           <Brand />
           <div className="ml-2 hidden md:block">
             <GroupSelector current={groupSelectorValue} />
           </div>
-          <nav className="ml-auto flex items-center gap-1">
+          <nav data-app-shell-nav className="ml-auto flex items-center gap-1">
             {navItems.map((item) => {
               const active =
                 item.href === "/app" ? pathname === "/app" : pathname.startsWith(item.href);
@@ -80,7 +83,10 @@ export function AppShell({ children }: Props) {
         <div className="mx-auto w-full max-w-7xl">{children}</div>
       </main>
 
-      <footer className="border-t border-border/60 px-6 py-6 text-xs text-muted-foreground">
+      <footer
+        data-app-shell-footer
+        className="border-t border-border/60 px-6 py-6 text-xs text-muted-foreground"
+      >
         <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-2">
           <p>
             The Reflection App · AI reflection coach. Your reflections live in this browser.

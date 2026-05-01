@@ -239,10 +239,34 @@ body {
   }
 }
 
-/* Print — stays light intentionally. Paper is paper. */
+/* Print — stays light intentionally. Paper is paper.
+   The portfolio page mounts <PrintStyles /> with stronger rules; this is
+   the global safety net so any page invoking window.print() still produces
+   black-on-white output even without local PrintStyles. */
 @media print {
   html, body {
     background: white !important;
     color: black !important;
+  }
+
+  /* Hide app shell chrome wherever it appears. */
+  [data-app-header],
+  [data-app-shell-nav],
+  [data-app-shell-footer],
+  [data-no-print],
+  nav {
+    display: none !important;
+  }
+
+  /* Force every printable surface to white-on-black with neutral borders. */
+  main,
+  article,
+  .print-surface,
+  .print-surface * {
+    background: white !important;
+    color: black !important;
+    border-color: #ddd !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
   }
 }
