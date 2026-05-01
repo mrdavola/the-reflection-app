@@ -49,7 +49,7 @@ export default function SettingsPage() {
       <div>
         <h1 className="font-display text-3xl tracking-tight md:text-4xl">Settings</h1>
         <p className="mt-2 text-foreground/75">
-          Adjust how The Reflection App looks and how your data is stored on this device.
+          Manage your profile and local data on this device.
         </p>
       </div>
 
