@@ -40,7 +40,7 @@ export function RechargeScreen({ durationMs = 5000, className = "" }: Props) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.6 }}
-      className={`flex min-h-[100dvh] w-full items-center justify-center bg-background ${className}`}
+      className={`fixed inset-0 z-50 flex w-full items-center justify-center bg-background ${className}`}
     >
       <BreathingCircle label={PHRASES[labelIndex]} />
     </motion.div>

@@ -2,26 +2,44 @@
 
 export const dynamic = "force-dynamic";
 
-import { Suspense, use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+/**
+ * Share-link reflection stage.
+ *
+ * Same useReflectionFlow + ReflectionStage as the personal route, but:
+ *   - mode="share-link" → no AI follow-ups, prompts come straight from the
+ *     activity's curated list.
+ *   - On completion, persist via storage.createReflection just like the old
+ *     run page did, then navigate to /r/[shareCode]/done?reflectionId=...
+ *   - TTS is never auto-enabled for share-link mode (cost + classroom safety).
+ */
+
+import {
+  Suspense,
+  use,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
-import { AudioRecorder, type AudioRecorderResult } from "@/components/audio-recorder";
-import { PromptBubble } from "@/components/prompt-bubble";
-import { GeneratingFeedback } from "@/components/loading-states";
-import { SentenceStarters } from "@/components/sentence-starters";
-import { ModelingMode } from "@/components/modeling-mode";
-import { useStore, store } from "@/lib/storage";
-import { analyzeReflection, generatePrompts } from "@/lib/api-client";
-import { t, type Lang } from "@/lib/i18n/strings";
-import type { PromptResponse } from "@/lib/types";
-
-function isSpanishLang(language?: string): boolean {
-  if (!language) return false;
-  return language === "Spanish" || language.toLowerCase().startsWith("es");
-}
-
-type Stage = "running" | "analyzing";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowLeft, Mic, Sparkles } from "lucide-react";
+import {
+  ReflectionStage,
+  RechargeScreen,
+  InsightsLayout,
+} from "@/components/reflection";
+import {
+  useReflectionFlow,
+  type ReflectionInsight,
+} from "@/lib/use-reflection-flow";
+import { store, useStore } from "@/lib/storage";
+import { getFocus } from "@/lib/focus-catalog";
+import type {
+  PromptResponse,
+  Reflection,
+  ReflectionAnalysis,
+} from "@/lib/types";
 
 interface Props {
   params: Promise<{ shareCode: string }>;
@@ -48,258 +66,267 @@ function ShareRunPageInner({ params }: Props) {
     activity ? s.groups.find((g) => g.id === activity.groupId) : undefined,
   );
 
-  const [prompts, setPrompts] = useState<string[]>([]);
-  const [responses, setResponses] = useState<PromptResponse[]>([]);
-  const [index, setIndex] = useState(0);
-  const [stage, setStage] = useState<Stage>("running");
-  const [adapting, setAdapting] = useState(false);
-  const [modelingDismissed, setModelingDismissed] = useState(false);
-  const initialised = useRef(false);
+  const [savedReflectionId, setSavedReflectionId] = useState<string | null>(null);
 
-  const lang: Lang = isSpanishLang(activity?.language) ? "es" : "en";
-
-  // initialise prompts from the activity (snapshot once on mount)
-  useEffect(() => {
-    if (initialised.current) return;
-    if (!activity) return;
-    initialised.current = true;
-    setPrompts(activity.prompts.map((p) => p.text));
-  }, [activity]);
-
-  // missing-data redirect: name required for non-anonymous, activity must exist
+  // Guards: missing activity, or non-anonymous group with no name → bounce.
   useEffect(() => {
     if (!activity || !group) {
-      router.replace(`/r/${shareCode}`);
-      return;
+      // Wait one tick — store may still be hydrating from localStorage.
+      const id = setTimeout(() => {
+        const fresh = store.getActivityByShareCode(shareCode);
+        if (!fresh) router.replace(`/r/${shareCode}`);
+      }, 200);
+      return () => clearTimeout(id);
     }
     if (group.accessType !== "anonymous" && !name) {
       router.replace(`/r/${shareCode}`);
     }
   }, [activity, group, name, router, shareCode]);
 
-  const totalEstimate = useMemo(
-    () => Math.max(prompts.length, activity?.prompts.length ?? 0),
-    [prompts.length, activity?.prompts.length],
+  const seedPrompts = useMemo(() => {
+    return activity?.prompts.map((p) => p.text) ?? [];
+  }, [activity?.prompts]);
+
+  const focusMeta = useMemo(
+    () => (activity ? getFocus(activity.focus) : null),
+    [activity],
   );
 
-  const finishReflection = useCallback(
-    async (allResponses: PromptResponse[]) => {
+  const handleComplete = useCallback(
+    async (payload: {
+      prompts: string[];
+      transcripts: string[];
+      insight: ReflectionInsight | null;
+      rawAnalysis: ReflectionAnalysis | null;
+    }) => {
       if (!activity || !group) return;
-      setStage("analyzing");
-      try {
-        const { analysis } = await analyzeReflection({
-          objective: activity.objective,
-          focus: activity.focus,
-          gradeBand: group.gradeBand,
-          language: activity.language,
-          responses: allResponses.map((r) => ({
-            promptText: r.promptText,
-            text: r.text,
-          })),
-          rubric: activity.rubric,
-        });
+      const responses: PromptResponse[] = payload.prompts.map((p, i) => {
+        const promptId = activity.prompts[i]?.id ?? `dynamic-${i}`;
+        return {
+          promptId,
+          promptText: p,
+          inputType: "audio",
+          text: payload.transcripts[i] ?? "",
+          durationSeconds: 0,
+          createdAt: new Date().toISOString(),
+        };
+      });
 
-        const participant = name
-          ? store.ensureParticipant(group.id, name, false)
-          : store.ensureParticipant(group.id, "Anonymous", true);
+      const participant = name
+        ? store.ensureParticipant(group.id, name, false)
+        : store.ensureParticipant(group.id, "Anonymous", true);
 
-        const reflection = store.createReflection({
-          activityId: activity.id,
-          groupId: group.id,
-          participantId: participant.id,
-          participantName: name || "Anonymous",
-          ownerUserId: group.ownerId,
-          objective: activity.objective,
-          focus: activity.focus,
-          responses: allResponses,
-          analysis,
-          feedbackVisibility: activity.feedbackVisibility,
-          scoreVisibility: activity.scoreVisibility,
-          completedAt: new Date().toISOString(),
-        });
-
-        router.replace(`/r/${shareCode}/done?reflectionId=${reflection.id}`);
-      } catch (err) {
-        console.error(err);
-        toast.error("We couldn't generate your feedback. Please try again.");
-        setStage("running");
-      }
-    },
-    [activity, group, name, router, shareCode],
-  );
-
-  const handleResponse = useCallback(
-    async (result: AudioRecorderResult) => {
-      if (!activity || !group) return;
-      const promptText = prompts[index] ?? "";
-      const promptId =
-        activity.prompts[index]?.id ?? `dynamic-${index}`;
-      const newResponse: PromptResponse = {
-        promptId,
-        promptText,
-        inputType: result.inputType,
-        text: result.text,
-        audioBlobUrl: result.audioBlobUrl,
-        durationSeconds: Math.round(result.durationSeconds),
-        createdAt: new Date().toISOString(),
+      const newRef: Omit<Reflection, "id" | "createdAt"> = {
+        activityId: activity.id,
+        groupId: group.id,
+        participantId: participant.id,
+        participantName: name || "Anonymous",
+        ownerUserId: group.ownerId,
+        objective: activity.objective,
+        focus: activity.focus,
+        responses,
+        analysis: payload.rawAnalysis ?? undefined,
+        feedbackVisibility: activity.feedbackVisibility,
+        scoreVisibility: activity.scoreVisibility,
+        completedAt: new Date().toISOString(),
       };
-      const nextResponses = [...responses, newResponse];
-      setResponses(nextResponses);
-
-      // Adaptive: after first response, generate the rest of the prompts.
-      if (
-        activity.promptMode === "first-teacher-then-ai" &&
-        index === 0 &&
-        prompts.length > 1
-      ) {
-        setAdapting(true);
-        try {
-          const remainingCount = Math.max(activity.prompts.length - 1, 1);
-          const { prompts: aiPrompts } = await generatePrompts({
-            objective: activity.objective,
-            focus: activity.focus,
-            gradeBand: group.gradeBand,
-            language: activity.language,
-            count: remainingCount,
-            prior: nextResponses.map((r) => ({
-              promptText: r.promptText,
-              text: r.text,
-            })),
-          });
-          const stitched = [
-            prompts[0],
-            ...aiPrompts.slice(0, remainingCount),
-          ];
-          setPrompts(stitched);
-        } catch (err) {
-          console.error(err);
-          toast("We'll keep your teacher's prompts since the AI couldn't adapt right now.");
-        } finally {
-          setAdapting(false);
-        }
-      }
-
-      // last prompt? analyze + persist; else advance
-      if (index >= prompts.length - 1) {
-        await finishReflection(nextResponses);
-      } else {
-        setIndex(index + 1);
-      }
+      const saved = store.createReflection(newRef);
+      setSavedReflectionId(saved.id);
     },
-    [activity, group, index, prompts, responses, finishReflection],
+    [activity, group, name],
   );
+
+  const reflection = useReflectionFlow({
+    mode: "share-link",
+    seedPrompts,
+    objective: activity?.objective,
+    focus: activity?.focus,
+    gradeBand: group?.gradeBand ?? "9-12",
+    language: activity?.language ?? "English",
+    maxFollowUps: 0, // share-link mode = curated only
+    onComplete: handleComplete,
+  });
+
+  // Auto-advance setup → prompt once seedPrompts are populated.
+  useEffect(() => {
+    if (
+      reflection.step === "setup" &&
+      seedPrompts.length > 0 &&
+      activity &&
+      group
+    ) {
+      reflection.beginPrompt();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seedPrompts.length, activity, group]);
+
+  // Once we land on insights, navigate to /done after a beat. We render the
+  // insights screen briefly so the student feels acknowledged, then the
+  // calmer thank-you takes over on /done.
+  useEffect(() => {
+    if (reflection.step === "insights" && savedReflectionId) {
+      const id = setTimeout(() => {
+        router.replace(`/r/${shareCode}/done?reflectionId=${savedReflectionId}`);
+      }, 4500);
+      return () => clearTimeout(id);
+    }
+  }, [reflection.step, savedReflectionId, router, shareCode]);
 
   if (!activity || !group) {
-    return null;
-  }
-
-  if (stage === "analyzing") {
-    const reading = lang === "es"
-      ? `Leyendo la reflexión de ${name || "este alumno"}…`
-      : `Reading ${name ? `${name}'s` : "your"} reflection…`;
     return (
-      <div className="pt-8">
-        <GeneratingFeedback label={reading} />
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md items-center justify-center px-6 text-center">
+        <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem]">
+          Loading reflection…
+        </p>
       </div>
     );
   }
 
-  // Modeling mode: show the weak/strong example before the first prompt.
-  if (
-    activity.modelingEnabled === true &&
-    !modelingDismissed &&
-    index === 0 &&
-    responses.length === 0
-  ) {
+  // ---- Recording stage (full-bleed) ----
+  if (reflection.step === "recording") {
     return (
-      <div className="pt-4">
-        <ModelingMode
-          objective={activity.objective}
-          focus={activity.focus}
-          onSkip={() => setModelingDismissed(true)}
-        />
+      <ReflectionStage
+        prompt={reflection.currentPrompt}
+        audioLevel={reflection.audioLevel}
+        transcript={reflection.currentTranscript}
+        elapsedSeconds={reflection.elapsedSeconds}
+        silenceCountdown={reflection.silenceCountdown}
+        questionLabel={`Question ${pad2(reflection.promptIndex + 1)} of ${pad2(reflection.totalEstimate)}`}
+        error={reflection.error}
+        onStop={() => reflection.stopRecording()}
+      />
+    );
+  }
+
+  if (reflection.step === "recharge") {
+    return <RechargeScreen />;
+  }
+
+  if (reflection.step === "insights" && reflection.insight) {
+    return (
+      <div className="min-h-[100dvh] bg-background pt-16">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key="insights"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <InsightsLayout
+              insight={reflection.insight}
+              eyebrow={focusMeta?.label}
+            />
+          </motion.div>
+        </AnimatePresence>
       </div>
     );
   }
 
-  const currentPrompt = prompts[index] ?? "";
-
-  const questionLabel =
-    lang === "es"
-      ? `Pregunta ${index + 1} de ${totalEstimate}`
-      : `Question ${index + 1} of ${totalEstimate}`;
-  const reflectingAs =
-    lang === "es" ? `Reflexionando como ${name}` : `Reflecting as ${name}`;
-  const adaptingMsg =
-    lang === "es"
-      ? "Adaptando las próximas preguntas a lo que acabas de decir…"
-      : "Tailoring the next prompts to what you just said…";
-  const finishLabel = lang === "es" ? "Terminar" : "Finish";
-  const copySuccess =
-    lang === "es"
-      ? "Copiado — pégalo en tu reflexión"
-      : "Copied — paste into your reflection";
-  const copyFail =
-    lang === "es"
-      ? "No se pudo copiar. Mantén presionado o haz clic derecho para copiar."
-      : "Couldn't copy. Long-press or right-click to copy.";
-  const copyUnsupported =
-    lang === "es"
-      ? "Copiar no está disponible en este navegador."
-      : "Copy not supported in this browser.";
-
+  // ---- Setup / Prompt / Analyzing — centered column ----
   return (
-    <div className="space-y-6 pt-4">
-      <div className="flex items-center justify-between text-xs">
-        <span className="font-medium uppercase tracking-wider text-muted-foreground">
-          {questionLabel}
-        </span>
-        {name && (
-          <span className="text-muted-foreground">{reflectingAs}</span>
-        )}
-      </div>
-
-      <AnimatePresence mode="wait">
-        <PromptBubble
-          key={`${index}-${currentPrompt}`}
-          prompt={currentPrompt}
-          index={index}
-          total={totalEstimate}
-        />
-      </AnimatePresence>
-
-      {adapting ? (
-        <div className="rounded-3xl border border-dashed border-border bg-card/60 p-6 text-center text-sm text-muted-foreground">
-          {adaptingMsg}
-        </div>
-      ) : (
-        <>
-          <SentenceStarters
-            gradeBand={group.gradeBand}
-            focus={activity.focus}
-            lang={lang}
-            onPick={(s) => {
-              if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-                navigator.clipboard
-                  .writeText(s)
-                  .then(() => toast.success(copySuccess))
-                  .catch(() => toast.error(copyFail));
-              } else {
-                toast(copyUnsupported);
-              }
+    <div className="relative min-h-[100dvh] overflow-hidden">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col gap-10 px-6 py-24">
+        <header className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => {
+              reflection.reset();
+              router.push(`/r/${shareCode}`);
             }}
-          />
-          <AudioRecorder
-            key={`recorder-${index}`}
-            minimumSpeakingSeconds={activity.minimumSpeakingSeconds || 15}
-            allowText={activity.recordingMode !== "audio-only"}
-            submitLabel={
-              index >= prompts.length - 1 ? finishLabel : t(lang, "next")
-            }
-            onComplete={handleResponse}
-          />
-        </>
-      )}
+            className="inline-flex items-center gap-2 text-[0.7rem] uppercase tracking-[0.3em] text-foreground/40 hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-3 w-3" />
+            Back
+          </button>
+          {focusMeta && (
+            <span className="text-[0.7rem] uppercase tracking-[0.3em] text-foreground/40">
+              {group.name} · {focusMeta.label}
+            </span>
+          )}
+        </header>
+
+        <AnimatePresence mode="wait">
+          {reflection.step === "prompt" && (
+            <motion.section
+              key={`prompt-${reflection.promptIndex}`}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col items-center text-center gap-10 pt-8 md:pt-16"
+            >
+              <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem]">
+                Question {pad2(reflection.promptIndex + 1)} of{" "}
+                {pad2(reflection.totalEstimate)}
+              </p>
+              <h1 className="font-display text-[2.25rem] md:text-[2.625rem] leading-[1.15] tracking-[-0.018em] max-w-[60ch]">
+                {reflection.currentPrompt}
+              </h1>
+
+              <button
+                type="button"
+                onClick={() => void reflection.startRecording()}
+                aria-label="Start recording"
+                className="group relative grid h-16 w-16 place-items-center rounded-full border border-primary/40 bg-background transition-all hover:border-primary/70 hover:shadow-[0_0_28px_-4px_oklch(0.78_0.105_230/0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <Mic className="h-6 w-6 text-primary group-hover:scale-105 transition-transform" />
+              </button>
+
+              <p className="text-[0.75rem] text-foreground/50">
+                Tap when you&rsquo;re ready. Speak as long as you need.
+              </p>
+
+              {reflection.error && (
+                <p role="alert" className="text-[0.75rem] text-destructive/80">
+                  {reflection.error === "microphone_denied"
+                    ? "We couldn't access the microphone. Check your browser permissions."
+                    : "Something interrupted the mic. Please try again."}
+                </p>
+              )}
+            </motion.section>
+          )}
+
+          {reflection.step === "analyzing" && (
+            <motion.section
+              key="analyzing"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6 }}
+              className="flex flex-col items-center text-center gap-6 pt-24"
+            >
+              <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem] text-primary/80">
+                {reflection.analyzingLabel}
+              </p>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+                className="grid h-16 w-16 place-items-center rounded-full border border-primary/30"
+              >
+                <Sparkles className="h-5 w-5 text-primary/80" />
+              </motion.div>
+              <p className="text-[0.875rem] text-foreground/60 max-w-sm">
+                Reading what you said with care.
+              </p>
+            </motion.section>
+          )}
+
+          {reflection.step === "setup" && (
+            <motion.section
+              key="setup"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center gap-6 pt-24"
+            >
+              <p className="text-foreground/60">Preparing your reflection…</p>
+            </motion.section>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
+}
+
+function pad2(n: number): string {
+  return n.toString().padStart(2, "0");
 }

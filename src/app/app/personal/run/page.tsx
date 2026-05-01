@@ -267,22 +267,23 @@ export default function PersonalRunPage() {
                 </p>
               )}
 
-              {!ttsEnabled && (
-                <button
-                  type="button"
-                  onClick={() => void reflection.startRecording()}
-                  aria-label="Start recording"
-                  className="group relative grid h-16 w-16 place-items-center rounded-full border border-primary/40 bg-background transition-all hover:border-primary/70 hover:shadow-[0_0_28px_-4px_oklch(0.78_0.105_230/0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <Mic className="h-6 w-6 text-primary group-hover:scale-105 transition-transform" />
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  stopTts();
+                  void reflection.startRecording();
+                }}
+                aria-label="Start recording"
+                className="group relative grid h-16 w-16 place-items-center rounded-full border border-primary/40 bg-background transition-all hover:border-primary/70 hover:shadow-[0_0_28px_-4px_oklch(0.78_0.105_230/0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <Mic className="h-6 w-6 text-primary group-hover:scale-105 transition-transform" />
+              </button>
 
-              {!ttsEnabled && (
-                <p className="text-[0.75rem] text-foreground/50">
-                  Tap when you&rsquo;re ready. Speak as long as you need.
-                </p>
-              )}
+              <p className="text-[0.75rem] text-foreground/50">
+                {ttsEnabled
+                  ? "Recording will start automatically when the prompt finishes — or tap the mic to begin now."
+                  : "Tap when you're ready. Speak as long as you need."}
+              </p>
 
               {reflection.error && (
                 <p role="alert" className="text-[0.75rem] text-destructive/80">

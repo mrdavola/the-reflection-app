@@ -175,6 +175,9 @@ export function useReflectionFlow(opts: UseReflectionFlowOptions): UseReflection
   const silenceTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const restartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  // Latest `finalizeTranscriptAndAdvance` — kept in a ref so the silence
+  // interval (started at recording-time) always calls the current closure.
+  const finalizeRef = useRef<((finalText: string) => Promise<void>) | null>(null);
 
   // Latest seedPrompts reference, in case caller passes a stable shape but new array.
   useEffect(() => {
@@ -416,14 +419,19 @@ export function useReflectionFlow(opts: UseReflectionFlowOptions): UseReflection
     ],
   );
 
+  // Keep the ref in sync with the freshest closure.
+  useEffect(() => {
+    finalizeRef.current = finalizeTranscriptAndAdvance;
+  }, [finalizeTranscriptAndAdvance]);
+
   const stopRecording = useCallback(() => {
     if (!isRecordingRef.current) return;
     if (elapsedSeconds < MINIMUM_RECORDING_SECONDS) return; // guard
     const finalText = (finalTranscriptRef.current + " " + interimRef.current).trim();
     stopMicAndRecognition();
     setElapsedSeconds(0);
-    void finalizeTranscriptAndAdvance(finalText);
-  }, [elapsedSeconds, stopMicAndRecognition, finalizeTranscriptAndAdvance]);
+    void finalizeRef.current?.(finalText);
+  }, [elapsedSeconds, stopMicAndRecognition]);
 
   // Auto-stop when silent + above the minimum.
   const tickSilence = useCallback(() => {
@@ -454,9 +462,9 @@ export function useReflectionFlow(opts: UseReflectionFlowOptions): UseReflection
       const finalText = (finalTranscriptRef.current + " " + interimRef.current).trim();
       stopMicAndRecognition();
       setElapsedSeconds(0);
-      void finalizeTranscriptAndAdvance(finalText);
+      void finalizeRef.current?.(finalText);
     }
-  }, [stopMicAndRecognition, finalizeTranscriptAndAdvance]);
+  }, [stopMicAndRecognition]);
 
   const startRecording = useCallback(async () => {
     setError(null);

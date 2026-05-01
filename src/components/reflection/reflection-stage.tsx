@@ -51,7 +51,7 @@ export function ReflectionStage({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed inset-0 z-10 bg-background overflow-hidden"
+      className="fixed inset-0 z-50 bg-background overflow-hidden"
     >
       {/* Ambient ripples — react to audio level */}
       <RippleField intensity={Math.max(0.05, audioLevel / 100)} />

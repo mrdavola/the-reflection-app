@@ -1,63 +1,25 @@
 "use client";
 
+/**
+ * Share-link intro screen.
+ *
+ * Same shape as the personal setup screen, but instead of picking a focus the
+ * student is told what they're joining and given a single Begin button. Name
+ * input shown only when the group is non-anonymous.
+ */
+
 import { use, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, ListChecks, Mic, Sparkles } from "lucide-react";
+import { ArrowRight, Mic } from "lucide-react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { RippleField } from "@/components/ambient";
 import { useStore } from "@/lib/storage";
 import { getFocus } from "@/lib/focus-catalog";
-import { getGradeBand } from "@/lib/grade-bands";
-import { BrandMark } from "@/components/brand";
-import { t, type Lang } from "@/lib/i18n/strings";
-import type { GradeBand } from "@/lib/types";
-
-function isSpanishLang(language?: string): boolean {
-  if (!language) return false;
-  return language === "Spanish" || language.toLowerCase().startsWith("es");
-}
-
-function greetingSubheadFor(gradeBand: GradeBand, lang: Lang): string {
-  if (lang === "es") {
-    switch (gradeBand) {
-      case "k-2":
-        return "Cuéntanos qué intentaste hoy.";
-      case "3-5":
-        return "Comparte en qué trabajaste y qué estás pensando.";
-      case "6-8":
-      case "9-12":
-        return "Te haremos algunas preguntas cortas sobre lo que estás trabajando.";
-      case "higher-ed":
-        return "Algunas preguntas para ayudarte a darle sentido a tu aprendizaje.";
-      case "professional":
-        return "Una reflexión breve y enfocada sobre tu práctica.";
-      case "adult":
-      default:
-        return "Tómate unos minutos para dar un paso atrás y pensar.";
-    }
-  }
-  switch (gradeBand) {
-    case "k-2":
-      return "Tell us what you tried today.";
-    case "3-5":
-      return "Share what you worked on and what you're thinking.";
-    case "6-8":
-    case "9-12":
-      return "We'll ask a few short questions about what you're working on.";
-    case "higher-ed":
-      return "A few prompts to help you make sense of your learning.";
-    case "professional":
-      return "A short, focused reflection on your practice.";
-    case "adult":
-    default:
-      return "Take a few minutes to step back and think.";
-  }
-}
 
 interface Props {
   params: Promise<{ shareCode: string }>;
@@ -75,8 +37,7 @@ export default function ShareEntryPage({ params }: Props) {
   );
 
   const [name, setName] = useState("");
-  const [testing, setTesting] = useState(false);
-  const [greetingDismissed, setGreetingDismissed] = useState(false);
+  const [testingMic, setTestingMic] = useState(false);
 
   const askForName = useMemo(() => {
     if (!group) return false;
@@ -85,73 +46,42 @@ export default function ShareEntryPage({ params }: Props) {
 
   if (!activity || !group) {
     return (
-      <Card className="mt-12">
-        <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
-          <div className="grid h-12 w-12 place-items-center rounded-full bg-accent text-accent-foreground">
-            <Sparkles className="h-5 w-5" />
-          </div>
-          <h1 className="font-display text-2xl tracking-tight">
-            This reflection link isn't active anymore.
-          </h1>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            Ask your teacher for a fresh link, or check that the URL is correct.
-            Your work is safe — it just lives behind a different door.
-          </p>
-          <Button asChild variant="outline" className="mt-2">
-            <Link href="/">Back to The Reflection App</Link>
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const focus = getFocus(activity.focus);
-  const gradeBand = getGradeBand(group.gradeBand);
-  const promptCount = activity.prompts.length;
-
-  const lang: Lang =
-    isSpanishLang(activity.language) || isSpanishLang(group.language) ? "es" : "en";
-
-  if (group.greetingEnabled && !greetingDismissed) {
-    return (
-      <div className="space-y-6 pt-4">
-        <Card className="bg-gradient-to-br from-primary/[0.04] via-card to-secondary/[0.04]">
-          <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
-            <BrandMark className="h-12 w-12" />
-            <h1 className="font-display text-2xl tracking-tight sm:text-3xl">
-              {t(lang, "greeting_welcome")}
-            </h1>
-            <p className="max-w-sm text-sm text-foreground/75">
-              {greetingSubheadFor(group.gradeBand, lang)}
-            </p>
-            <Button
-              size="lg"
-              className="mt-2"
-              onClick={() => setGreetingDismissed(true)}
-            >
-              {t(lang, "continue")}
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-2xl flex-col items-center justify-center gap-6 px-6 text-center">
+        <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem]">Reflection link</p>
+        <h1 className="font-display text-[2.25rem] md:text-[2.625rem] leading-[1.15] tracking-[-0.018em]">
+          This link isn&rsquo;t active anymore.
+        </h1>
+        <p className="text-foreground/70 max-w-prose">
+          Ask your teacher for a fresh link, or check the URL. Your work is
+          safe — it just lives behind a different door.
+        </p>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-[0.7rem] uppercase tracking-[0.3em] text-foreground/60 hover:text-foreground transition-colors"
+        >
+          <ArrowRight className="h-3 w-3" />
+          Back to Refleckt
+        </Link>
       </div>
     );
   }
 
+  const focusMeta = getFocus(activity.focus);
+
   async function testMicrophone() {
-    setTesting(true);
+    setTestingMic(true);
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
-        toast.error("Your browser doesn't support microphone access. You can still type your answers.");
+        toast.error("Your browser doesn't support microphone access.");
         return;
       }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach((t) => t.stop());
       toast.success("Microphone is working. You're all set.");
     } catch {
-      toast.error("Couldn't access your microphone. Check permissions, or type your answers instead.");
+      toast.error("Couldn't access your microphone. Check permissions.");
     } finally {
-      setTesting(false);
+      setTestingMic(false);
     }
   }
 
@@ -163,129 +93,96 @@ export default function ShareEntryPage({ params }: Props) {
     const trimmed = name.trim();
     const params = new URLSearchParams();
     if (trimmed) params.set("name", trimmed);
-    router.push(`/r/${shareCode}/run${params.toString() ? `?${params.toString()}` : ""}`);
+    router.push(
+      `/r/${shareCode}/run${params.toString() ? `?${params.toString()}` : ""}`,
+    );
   }
 
-  const namePlaceholder =
-    group.accessType === "name-only"
-      ? "First name + last initial (e.g. Jordan A.)"
-      : "First name";
-
   return (
-    <div className="space-y-8 pt-4">
-      <div>
-        <Badge variant="primary" className="mb-3">
-          <Sparkles className="h-3 w-3" />
-          {focus.emoji} {focus.label}
-        </Badge>
-        <h1 className="font-display text-4xl leading-tight tracking-tight sm:text-5xl">
-          {activity.title}
-        </h1>
-        <p className="mt-3 text-foreground/75">{activity.objective}</p>
+    <div className="relative min-h-[100dvh] overflow-hidden">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-32 -top-24 h-[26rem] w-[26rem] opacity-70"
+      >
+        <RippleField intensity={0.04} />
       </div>
 
-      <Card className="bg-gradient-to-br from-primary/[0.03] via-card to-secondary/[0.03]">
-        <CardContent className="grid gap-3 py-5 text-sm sm:grid-cols-3">
-          <Stat
-            icon={<ListChecks className="h-4 w-4 text-primary" />}
-            label="Prompts"
-            value={`${promptCount}`}
-          />
-          <Stat
-            icon={<Sparkles className="h-4 w-4 text-primary" />}
-            label="Focus"
-            value={focus.label}
-          />
-          <Stat
-            icon={<Mic className="h-4 w-4 text-primary" />}
-            label="Best for"
-            value={gradeBand.label}
-          />
-        </CardContent>
-      </Card>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-[1] mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col justify-center gap-12 px-6 py-24"
+      >
+        <header className="space-y-4">
+          <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem]">
+            Joining: {group.name} · {activity.title}
+          </p>
+          <h1 className="font-display text-[2.5rem] md:text-[3.25rem] leading-[1.05] tracking-[-0.02em] max-w-3xl">
+            {activity.objective}
+          </h1>
+          <p className="text-foreground/70 max-w-prose">
+            A short reflection — {activity.prompts.length}{" "}
+            {activity.prompts.length === 1 ? "question" : "questions"}, focused on{" "}
+            <span className="text-foreground/90">{focusMeta.label}</span>. Speak
+            when you&rsquo;re ready.
+          </p>
+        </header>
 
-      <div className="space-y-5">
-        {askForName && (
-          <div className="space-y-2">
-            <Label htmlFor="name">Your name</Label>
-            <Input
-              id="name"
-              autoFocus
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={namePlaceholder}
-              maxLength={48}
-            />
-            <p className="text-xs text-muted-foreground">
-              Only your teacher can see this. We don't ask for an email or login.
-            </p>
-          </div>
-        )}
-
-        {!askForName && (
-          <Card>
-            <CardContent className="py-5">
-              <div className="text-sm">
-                <span className="font-medium">Anonymous reflection.</span>{" "}
-                <span className="text-muted-foreground">
-                  Your teacher won't be able to attribute your answer to you.
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        <div className="rounded-2xl border border-dashed border-border bg-card/60 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <div className="text-sm font-medium">Test your microphone</div>
-              <p className="text-xs text-muted-foreground">
-                Quick check before you start. You can also type your answers.
+        <section className="space-y-5">
+          {askForName ? (
+            <div className="space-y-2">
+              <Label
+                htmlFor="name"
+                className="margin-note uppercase tracking-[0.3em] text-[0.7rem]"
+              >
+                Your name
+              </Label>
+              <Input
+                id="name"
+                autoFocus
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={
+                  group.accessType === "name-only"
+                    ? "First name + last initial (e.g. Jordan A.)"
+                    : "First name"
+                }
+                maxLength={48}
+                className="h-12 text-[1rem]"
+              />
+              <p className="text-[0.75rem] text-foreground/50">
+                Only your teacher sees this. No email, no login.
               </p>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={testMicrophone}
-              disabled={testing}
-            >
-              <Mic className="h-4 w-4" />
-              {testing ? "Testing…" : "Test my microphone"}
-            </Button>
-          </div>
-        </div>
+          ) : (
+            <div className="rounded-lg border border-border/60 bg-surface px-5 py-4">
+              <p className="text-[0.875rem] text-foreground/80">
+                <span className="text-foreground">Anonymous reflection.</span>{" "}
+                <span className="text-foreground/60">
+                  Your teacher won&rsquo;t be able to attribute your answer to you.
+                </span>
+              </p>
+            </div>
+          )}
 
-        <div className="flex justify-end pt-2">
-          <Button size="lg" onClick={start}>
-            Start
+          <button
+            type="button"
+            onClick={testMicrophone}
+            disabled={testingMic}
+            className="inline-flex items-center gap-2 text-[0.7rem] uppercase tracking-[0.3em] text-foreground/40 hover:text-foreground transition-colors"
+          >
+            <Mic className="h-3 w-3" />
+            {testingMic ? "Testing…" : "Test my microphone"}
+          </button>
+        </section>
+
+        <div className="flex justify-end">
+          <Button onClick={start} size="lg">
+            Begin
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function Stat({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-xl bg-card/80 px-4 py-3 ring-1 ring-border/60">
-      <div className="grid h-8 w-8 place-items-center rounded-full bg-accent text-accent-foreground">
-        {icon}
-      </div>
-      <div>
-        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          {label}
-        </div>
-        <div className="text-sm font-medium">{value}</div>
-      </div>
+      </motion.div>
     </div>
   );
 }
