@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type VoicePersona = "Aoede" | "Puck" | "Charon" | "Kore";
 
@@ -22,11 +22,19 @@ export function useTTS({ voice = "Aoede", muted = false }: UseTTSOptions = {}) {
   const [isLoading, setIsLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Track the active object URL so we can revoke it on stop / unmount,
+  // not just on natural `ended`. Otherwise the URL leaks if the component
+  // unmounts mid-playback or the user calls stop() before audio finishes.
+  const urlRef = useRef<string | null>(null);
 
   const stop = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+    }
+    if (urlRef.current) {
+      URL.revokeObjectURL(urlRef.current);
+      urlRef.current = null;
     }
     setIsPlaying(false);
     setIsLoading(false);
@@ -46,6 +54,7 @@ export function useTTS({ voice = "Aoede", muted = false }: UseTTSOptions = {}) {
         if (!res.ok) throw new Error(`TTS request failed: ${res.status}`);
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
+        urlRef.current = url;
         const audio = new Audio(url);
         audioRef.current = audio;
 
@@ -55,12 +64,21 @@ export function useTTS({ voice = "Aoede", muted = false }: UseTTSOptions = {}) {
         };
         audio.onended = () => {
           setIsPlaying(false);
-          URL.revokeObjectURL(url);
+          if (urlRef.current === url) {
+            URL.revokeObjectURL(url);
+            urlRef.current = null;
+          } else {
+            URL.revokeObjectURL(url);
+          }
           opts.onEnded?.();
         };
         audio.onerror = () => {
           setIsLoading(false);
           setIsPlaying(false);
+          if (urlRef.current === url) {
+            URL.revokeObjectURL(url);
+            urlRef.current = null;
+          }
         };
 
         if (!muted || opts.voiceOverride) {
@@ -75,6 +93,9 @@ export function useTTS({ voice = "Aoede", muted = false }: UseTTSOptions = {}) {
     },
     [voice, muted, stop],
   );
+
+  // Revoke any lingering URL + stop playback if the consumer unmounts.
+  useEffect(() => () => stop(), [stop]);
 
   return { speak, stop, isLoading, isPlaying };
 }

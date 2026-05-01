@@ -175,6 +175,13 @@ export function useReflectionFlow(opts: UseReflectionFlowOptions): UseReflection
   const silenceTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const restartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  // Aborts in-flight /api/ai/prompts and /api/ai/analyze fetches if the user
+  // resets the flow or unmounts mid-analyze. Without this, late-resolving
+  // fetches could double-spawn follow-ups or set state on a torn-down hook.
+  const controllerRef = useRef<AbortController | null>(null);
+  // Holds the recharge → insights setTimeout so we can clear it on unmount /
+  // reset / mic-stop and avoid setStep firing on a torn-down hook.
+  const rechargeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Latest `finalizeTranscriptAndAdvance` — kept in a ref so the silence
   // interval (started at recording-time) always calls the current closure.
   const finalizeRef = useRef<((finalText: string) => Promise<void>) | null>(null);
@@ -280,6 +287,14 @@ export function useReflectionFlow(opts: UseReflectionFlowOptions): UseReflection
       clearInterval(silenceTimerRef.current);
       silenceTimerRef.current = null;
     }
+    if (rechargeTimeoutRef.current) {
+      clearTimeout(rechargeTimeoutRef.current);
+      rechargeTimeoutRef.current = null;
+    }
+    if (controllerRef.current) {
+      controllerRef.current.abort();
+      controllerRef.current = null;
+    }
     setSilenceCountdown(null);
   }, []);
 
@@ -324,6 +339,9 @@ export function useReflectionFlow(opts: UseReflectionFlowOptions): UseReflection
         setAnalyzingLabel("FORMING NEXT QUESTION");
         setStep("analyzing");
         const startedAt = Date.now();
+        controllerRef.current?.abort();
+        const followUpController = new AbortController();
+        controllerRef.current = followUpController;
         try {
           const res = await fetch("/api/ai/prompts", {
             method: "POST",
@@ -339,10 +357,14 @@ export function useReflectionFlow(opts: UseReflectionFlowOptions): UseReflection
                 text: nextTranscripts[i] ?? "",
               })),
             }),
+            signal: followUpController.signal,
           });
+          if (followUpController.signal.aborted) return;
           const data = (await res.json()) as { prompts?: string[] };
+          if (followUpController.signal.aborted) return;
           const followUp = data.prompts?.[0];
           await holdAtLeast(startedAt, ANALYZE_MIN_HOLD_MS);
+          if (followUpController.signal.aborted) return;
           if (followUp) {
             setPrompts((prev) => [...prev, followUp]);
             setPromptIndex((i) => i + 1);
@@ -350,6 +372,7 @@ export function useReflectionFlow(opts: UseReflectionFlowOptions): UseReflection
             return;
           }
         } catch (err) {
+          if (isAbortError(err)) return; // silent — caller initiated
           console.error("[reflection-flow] follow-up failed:", err);
           await holdAtLeast(startedAt, ANALYZE_MIN_HOLD_MS);
           // fall through to final analysis
@@ -361,6 +384,9 @@ export function useReflectionFlow(opts: UseReflectionFlowOptions): UseReflection
       setStep("analyzing");
       const analyzeStarted = Date.now();
       let derivedAnalysis: ReflectionAnalysis | null = null;
+      controllerRef.current?.abort();
+      const analyzeController = new AbortController();
+      controllerRef.current = analyzeController;
       try {
         if (objective && focus) {
           const res = await fetch("/api/ai/analyze", {
@@ -376,14 +402,19 @@ export function useReflectionFlow(opts: UseReflectionFlowOptions): UseReflection
                 text: nextTranscripts[i] ?? "",
               })),
             }),
+            signal: analyzeController.signal,
           });
+          if (analyzeController.signal.aborted) return;
           const data = (await res.json()) as { analysis?: ReflectionAnalysis };
+          if (analyzeController.signal.aborted) return;
           if (data.analysis) derivedAnalysis = data.analysis;
         }
       } catch (err) {
+        if (isAbortError(err)) return; // silent — caller initiated
         console.error("[reflection-flow] analyze failed:", err);
       }
       await holdAtLeast(analyzeStarted, ANALYZE_MIN_HOLD_MS);
+      if (analyzeController.signal.aborted) return;
 
       const derivedInsight = deriveInsight(derivedAnalysis, nextTranscripts);
       setRawAnalysis(derivedAnalysis);
@@ -391,7 +422,8 @@ export function useReflectionFlow(opts: UseReflectionFlowOptions): UseReflection
 
       // Recharge plays once between final analysis and insights.
       setStep("recharge");
-      window.setTimeout(() => {
+      rechargeTimeoutRef.current = setTimeout(() => {
+        rechargeTimeoutRef.current = null;
         setStep("insights");
         if (onComplete) {
           void Promise.resolve(
@@ -516,6 +548,14 @@ export function useReflectionFlow(opts: UseReflectionFlowOptions): UseReflection
 
   const reset = useCallback(() => {
     stopMicAndRecognition();
+    if (rechargeTimeoutRef.current) {
+      clearTimeout(rechargeTimeoutRef.current);
+      rechargeTimeoutRef.current = null;
+    }
+    if (controllerRef.current) {
+      controllerRef.current.abort();
+      controllerRef.current = null;
+    }
     setStep("setup");
     setPrompts(seedPrompts);
     setPromptIndex(0);
@@ -567,6 +607,17 @@ async function holdAtLeast(startedAtMs: number, minMs: number) {
   if (elapsed < minMs) {
     await new Promise<void>((resolve) => setTimeout(resolve, minMs - elapsed));
   }
+}
+
+function isAbortError(err: unknown): boolean {
+  return (
+    err instanceof DOMException && err.name === "AbortError"
+  ) || (
+    typeof err === "object" &&
+    err !== null &&
+    "name" in err &&
+    (err as { name?: unknown }).name === "AbortError"
+  );
 }
 
 const FALLBACK_QUOTES: string[] = [
