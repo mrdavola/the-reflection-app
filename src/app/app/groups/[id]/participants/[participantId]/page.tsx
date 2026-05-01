@@ -6,27 +6,25 @@ import { useParams } from "next/navigation";
 import {
   ArrowLeft,
   ArrowUpRight,
-  ChevronDown,
   ClipboardCopy,
   FileDown,
   GraduationCap,
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { TrendSparkline } from "@/components/trend-sparkline";
+import { GrowthChart } from "@/components/growth-chart";
+import { StreakCard } from "@/components/streak-card";
 import { useStore } from "@/lib/storage";
 import type { Mindset, Reflection, Tone } from "@/lib/types";
-import { cn, formatDate, formatRelativeTime } from "@/lib/utils";
+import { formatDate, formatRelativeTime } from "@/lib/utils";
 
 export default function ParticipantDetailPage() {
   const params = useParams<{ id: string; participantId: string }>();
@@ -43,7 +41,6 @@ export default function ParticipantDetailPage() {
         (r) =>
           r.groupId === groupId &&
           (r.participantId === participantId ||
-            // fall back to name match — older reflections may not have linked id
             (!r.participantId &&
               r.participantName &&
               participant &&
@@ -56,33 +53,39 @@ export default function ParticipantDetailPage() {
     s.activities.filter((a) => a.groupId === groupId),
   );
 
-  // Sorted oldest -> newest for sparkline / averages
-  const chronological = useMemo(
-    () => reflections.slice().sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1)),
+  const stats = useMemo(() => computeStats(reflections), [reflections]);
+
+  const dates = useMemo(
+    () => reflections.map((r) => r.createdAt),
     [reflections],
   );
 
-  const trendPoints = useMemo<number[]>(
-    () =>
-      chronological
-        .map((r) => r.analysis?.reflectionLevel)
-        .filter(
-          (level): level is NonNullable<typeof level> =>
-            typeof level === "number",
-        ),
-    [chronological],
-  );
-
-  const stats = useMemo(() => computeStats(reflections), [reflections]);
-
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  // Up to 3 verbatim quotes for the side rail.
+  const quotes = useMemo(() => {
+    const out: { id: string; text: string; date: string }[] = [];
+    for (const r of reflections) {
+      const list = r.analysis?.studentQuotes ?? [];
+      for (const q of list) {
+        const trimmed = q.replace(/^["“”']|["“”']$/g, "").trim();
+        if (trimmed.length === 0) continue;
+        out.push({
+          id: `${r.id}:${out.length}`,
+          text: trimmed,
+          date: r.createdAt,
+        });
+        if (out.length >= 3) break;
+      }
+      if (out.length >= 3) break;
+    }
+    return out;
+  }, [reflections]);
 
   if (!group) {
     return (
       <div className="mx-auto max-w-2xl py-16 text-center">
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-12">
-            <div className="grid h-12 w-12 place-items-center rounded-full bg-accent text-accent-foreground">
+            <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
               <GraduationCap className="h-6 w-6" />
             </div>
             <CardTitle>Group not found</CardTitle>
@@ -90,7 +93,7 @@ export default function ParticipantDetailPage() {
               This group doesn&apos;t exist on this device.
             </CardDescription>
             <Button asChild className="mt-2">
-              <Link href="/app">Back to dashboard</Link>
+              <Link href="/app/groups">Back to groups</Link>
             </Button>
           </CardContent>
         </Card>
@@ -103,7 +106,7 @@ export default function ParticipantDetailPage() {
       <div className="mx-auto max-w-2xl py-16 text-center">
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-12">
-            <div className="grid h-12 w-12 place-items-center rounded-full bg-accent text-accent-foreground">
+            <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
               <Sparkles className="h-6 w-6" />
             </div>
             <CardTitle>Participant not found</CardTitle>
@@ -119,7 +122,6 @@ export default function ParticipantDetailPage() {
     );
   }
 
-  const mostRecent = reflections[0];
   const portfolioHref = `/app/groups/${groupId}/participants/${participantId}/portfolio`;
 
   function openPortfolio() {
@@ -140,229 +142,188 @@ export default function ParticipantDetailPage() {
     <div className="space-y-10">
       <div>
         <Button asChild variant="ghost" size="sm">
-          <Link href={`/app/groups/${groupId}`}>
+          <Link href={`/app/groups/${groupId}?tab=participants`}>
             <ArrowLeft className="h-4 w-4" />
             Back to {group.name}
           </Link>
         </Button>
       </div>
 
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-start gap-4">
-          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-secondary to-primary text-primary-foreground shadow-[0_20px_50px_-25px_hsl(var(--primary)/0.6)]">
-            <span className="font-display text-xl">
-              {participant.name.slice(0, 1).toUpperCase()}
-            </span>
-          </div>
-          <div>
-            <h1 className="font-display text-3xl tracking-tight md:text-4xl">
+      <header className="space-y-3">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0 flex-1 space-y-2">
+            <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem]">
+              {group.name} · Participant
+            </p>
+            <h1 className="font-display text-4xl leading-[1.02] tracking-tight md:text-6xl">
               {participant.name}
             </h1>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2 pt-1 text-sm text-foreground/70">
               <Badge variant="muted">
                 {reflections.length} reflection
                 {reflections.length === 1 ? "" : "s"}
               </Badge>
-              {mostRecent && (
+              {reflections[0] && (
                 <Badge variant="outline">
-                  Latest {formatRelativeTime(mostRecent.createdAt)}
+                  Latest {formatRelativeTime(reflections[0].createdAt)}
                 </Badge>
               )}
               {participant.anonymous && <Badge variant="muted">Anonymous</Badge>}
             </div>
           </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <Button onClick={openPortfolio} size="lg">
+              <FileDown className="h-4 w-4" />
+              Portfolio (PDF)
+            </Button>
+            <Button onClick={copyShareLink} variant="outline">
+              <ClipboardCopy className="h-4 w-4" />
+              Copy share link
+            </Button>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={openPortfolio} size="lg">
-            <FileDown className="h-4 w-4" />
-            Download portfolio (PDF)
-          </Button>
-          <Button onClick={copyShareLink} variant="outline">
-            <ClipboardCopy className="h-4 w-4" />
-            Copy share link
-          </Button>
-        </div>
+        <hr className="rule-soft mt-2" />
       </header>
 
-      {trendPoints.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base font-medium">
-              Reflection level over time
-            </CardTitle>
-            <CardDescription>
-              Each point is one reflection, oldest on the left.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <TrendSparkline
-              points={trendPoints}
-              width={560}
-              height={88}
-              className="w-full"
+      {/* 2-col grid: streak + growth on the left, quotes on the right */}
+      <section className="grid gap-6 lg:grid-cols-[1fr_minmax(260px,340px)]">
+        <div className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <StreakCard
+              dates={dates}
+              totalReflections={reflections.length}
             />
-          </CardContent>
-        </Card>
-      )}
+            <Card>
+              <CardContent className="flex flex-col gap-3 py-6">
+                <p className="margin-note uppercase tracking-[0.18em] text-[0.65rem]">
+                  Average level
+                </p>
+                <div className="font-display text-5xl leading-none tabular-nums">
+                  {stats.avgLevel ? stats.avgLevel.toFixed(1) : "—"}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {stats.analysedCount > 0
+                    ? `Across ${stats.analysedCount} analysed reflection${stats.analysedCount === 1 ? "" : "s"}`
+                    : "No analysis yet"}
+                </p>
+                <div className="mt-2 grid grid-cols-2 gap-3 text-xs">
+                  <div className="rounded-2xl bg-muted/50 p-3">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      Top mindset
+                    </p>
+                    <p className="mt-1 font-medium capitalize">
+                      {stats.topMindset?.label ?? "—"}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-muted/50 p-3">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      Top tone
+                    </p>
+                    <p className="mt-1 font-medium capitalize">
+                      {stats.topTone?.label ?? "—"}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Total reflections"
-          value={String(reflections.length)}
-          hint={
-            stats.firstAt
-              ? `Since ${formatDate(stats.firstAt)}`
-              : "No reflections yet"
-          }
-        />
-        <StatCard
-          label="Average level"
-          value={stats.avgLevel ? stats.avgLevel.toFixed(1) : "—"}
-          hint={stats.analysedCount > 0 ? `${stats.analysedCount} analysed` : "No analysis yet"}
-        />
-        <StatCard
-          label="Most-common mindset"
-          value={stats.topMindset?.label ?? "—"}
-          hint={
-            stats.topMindset
-              ? `${stats.topMindset.count} of ${stats.analysedCount}`
-              : ""
-          }
-        />
-        <StatCard
-          label="Most-common tone"
-          value={stats.topTone?.label ?? "—"}
-          hint={
-            stats.topTone ? `${stats.topTone.count} of ${stats.analysedCount}` : ""
-          }
-        />
-      </section>
-
-      <section>
-        <div className="mb-3 flex items-end justify-between">
           <div>
-            <h2 className="font-display text-2xl tracking-tight">Reflections</h2>
-            <p className="text-sm text-muted-foreground">
-              Newest first. Click a row to peek at the summary.
+            <p className="margin-note mb-2 uppercase tracking-[0.18em] text-[0.65rem]">
+              Reflection level over time
             </p>
+            <GrowthChart reflections={reflections} />
           </div>
         </div>
 
+        <aside className="space-y-3">
+          <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem]">
+            Voice
+          </p>
+          {quotes.length === 0 ? (
+            <p className="text-sm italic text-foreground/55">
+              Verbatim quotes appear here as soon as the AI surfaces them.
+            </p>
+          ) : (
+            <ul className="space-y-5">
+              {quotes.map((q) => (
+                <li key={q.id} className="space-y-1">
+                  <p className="font-display italic text-lg leading-snug text-foreground/75">
+                    “{q.text}”
+                  </p>
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+                    {formatDate(q.date)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </aside>
+      </section>
+
+      {/* Reflection timeline */}
+      <section className="space-y-4">
+        <h2 className="font-display text-2xl tracking-tight">Timeline</h2>
         {reflections.length === 0 ? (
           <Card>
-            <CardContent className="flex flex-col items-center gap-2 py-12 text-center">
-              <CardTitle className="text-base font-medium">
+            <CardContent className="py-10 text-center">
+              <CardTitle className="font-display text-lg">
                 No reflections yet
               </CardTitle>
-              <CardDescription className="max-w-sm">
+              <CardDescription className="mx-auto mt-2 max-w-sm">
                 Once {participant.name} submits a reflection in this group,
                 you&apos;ll see it here.
               </CardDescription>
             </CardContent>
           </Card>
         ) : (
-          <Card>
-            <CardContent className="divide-y divide-border/60 p-0">
-              {reflections.map((r) => {
-                const activity = activities.find((a) => a.id === r.activityId);
-                const isOpen = !!expanded[r.id];
-                const a = r.analysis;
-                return (
-                  <div key={r.id}>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setExpanded((prev) => ({ ...prev, [r.id]: !prev[r.id] }))
-                      }
-                      className="flex w-full flex-wrap items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/50 sm:flex-nowrap"
-                      aria-expanded={isOpen}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium text-foreground">
-                          {activity?.title ||
-                            r.objective ||
-                            (r.activityId === null
-                              ? "Personal reflection"
-                              : "Reflection")}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatDate(r.createdAt)}
-                        </div>
-                      </div>
-                      {a && (
-                        <Badge
-                          variant={badgeVariantForLevel(a.reflectionLevel)}
-                          className="shrink-0"
-                        >
-                          Level {a.reflectionLevel}
-                        </Badge>
-                      )}
-                      {a?.mindset && (
-                        <Badge variant="outline" className="shrink-0 capitalize">
-                          {a.mindset}
-                        </Badge>
-                      )}
-                      {a?.tone && (
-                        <Badge variant="muted" className="shrink-0 capitalize">
-                          {a.tone}
-                        </Badge>
-                      )}
-                      <span
-                        className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-foreground/70"
-                        onClick={(e) => e.stopPropagation()}
+          <ol className="overflow-hidden rounded-2xl border border-border/60 bg-card/30 divide-y divide-border/40">
+            {reflections.map((r) => {
+              const activity = activities.find((a) => a.id === r.activityId);
+              const a = r.analysis;
+              return (
+                <li key={r.id}>
+                  <Link
+                    href={`/app/reflections/${r.id}`}
+                    className="flex flex-wrap items-center gap-3 px-4 py-3 transition-colors hover:bg-card/60 sm:flex-nowrap"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="font-display text-lg leading-snug">
+                        {activity?.title ||
+                          r.objective ||
+                          (r.activityId === null
+                            ? "Personal reflection"
+                            : "Reflection")}
+                      </p>
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+                        {formatDate(r.createdAt)}
+                      </p>
+                    </div>
+                    {a && (
+                      <Badge
+                        variant={badgeVariantForLevel(a.reflectionLevel)}
+                        className="shrink-0"
                       >
-                        <Link
-                          href={`/app/reflections/${r.id}`}
-                          className="inline-flex items-center gap-1 hover:text-foreground"
-                        >
-                          Open
-                          <ArrowUpRight className="h-3 w-3" />
-                        </Link>
-                      </span>
-                      <ChevronDown
-                        className={cn(
-                          "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
-                          isOpen && "rotate-180",
-                        )}
-                      />
-                    </button>
-                    {isOpen && (
-                      <div className="bg-muted/40 px-4 py-3 text-sm leading-relaxed text-foreground/85">
-                        {a?.summary ??
-                          r.responses[0]?.text ??
-                          "No summary or transcript saved."}
-                      </div>
+                        Level {a.reflectionLevel}
+                      </Badge>
                     )}
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
+                    {a?.mindset && (
+                      <Badge variant="outline" className="shrink-0 capitalize">
+                        {a.mindset}
+                      </Badge>
+                    )}
+                    <span className="ml-auto inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.16em] text-foreground/70">
+                      Open
+                      <ArrowUpRight className="h-3 w-3" />
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ol>
         )}
       </section>
     </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-}) {
-  return (
-    <Card>
-      <CardContent className="flex flex-col gap-1 py-5">
-        <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          {label}
-        </div>
-        <div className="font-display text-2xl tracking-tight">{value}</div>
-        {hint && <div className="text-xs text-muted-foreground">{hint}</div>}
-      </CardContent>
-    </Card>
   );
 }
 
@@ -433,3 +394,4 @@ function topEntry<K extends string>(
   }
   return best;
 }
+

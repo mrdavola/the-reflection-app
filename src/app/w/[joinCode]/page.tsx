@@ -3,10 +3,8 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Presentation, Sparkles } from "lucide-react";
+import { ArrowRight, Presentation } from "lucide-react";
 import { toast } from "sonner";
-import { BrandMark } from "@/components/brand";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -37,15 +35,15 @@ export default function WorkshopJoinPage({ params }: Props) {
     return (
       <Card className="mt-12">
         <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
-          <div className="grid h-12 w-12 place-items-center rounded-full bg-accent text-accent-foreground">
+          <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
             <Presentation className="h-5 w-5" />
           </div>
           <h1 className="font-display text-2xl tracking-tight">
             That workshop code isn't active.
           </h1>
           <p className="max-w-sm text-sm text-muted-foreground">
-            Double-check the code with your facilitator. It's a 6-character code
-            like <span className="font-mono">A1B2C3</span>.
+            Double-check the code with your facilitator. It's a 6-character
+            code like <span className="font-mono">A1B2C3</span>.
           </p>
           <Button asChild variant="outline" className="mt-2">
             <Link href="/">Back to The Reflection App</Link>
@@ -59,7 +57,7 @@ export default function WorkshopJoinPage({ params }: Props) {
     return (
       <Card className="mt-12">
         <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
-          <div className="grid h-12 w-12 place-items-center rounded-full bg-accent text-accent-foreground">
+          <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
             <Presentation className="h-5 w-5" />
           </div>
           <h1 className="font-display text-2xl tracking-tight">
@@ -88,33 +86,26 @@ export default function WorkshopJoinPage({ params }: Props) {
   }
 
   return (
-    <div className="space-y-8 pt-4">
-      <div>
-        <Badge variant="primary" className="mb-3">
-          <Sparkles className="h-3 w-3" />
-          Workshop
-        </Badge>
-        <h1 className="font-display text-4xl leading-tight tracking-tight sm:text-5xl">
+    <div className="space-y-12 pt-8">
+      <div className="space-y-3">
+        <p className="margin-note uppercase tracking-[0.4em] text-[0.7rem]">
+          Join workshop · {upper}
+        </p>
+        <h1 className="font-display text-5xl leading-[1.02] tracking-tight md:text-6xl">
           {workshop.title}
         </h1>
-        <p className="mt-3 text-foreground/75">{board.prompt}</p>
+        <p className="font-display italic text-xl text-foreground/70">
+          {board.prompt}
+        </p>
       </div>
 
-      <Card className="bg-gradient-to-br from-primary/[0.03] via-card to-secondary/[0.03]">
-        <CardContent className="flex items-center gap-4 py-5">
-          <BrandMark className="h-10 w-10" />
-          <div className="text-sm">
-            <div className="font-medium">You're joining a live board.</div>
-            <div className="text-muted-foreground">
-              Add notes anyone in the room can see, in real time.
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <hr className="rule-soft" />
 
-      <div className="space-y-5">
+      <div className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="name">Your first name</Label>
+          <Label htmlFor="name" className="margin-note uppercase tracking-[0.18em] text-[0.65rem]">
+            Your first name
+          </Label>
           <Input
             id="name"
             autoFocus
@@ -122,6 +113,7 @@ export default function WorkshopJoinPage({ params }: Props) {
             onChange={(e) => setName(e.target.value)}
             placeholder="First name"
             maxLength={48}
+            className="h-12 text-base"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -134,9 +126,9 @@ export default function WorkshopJoinPage({ params }: Props) {
           </p>
         </div>
 
-        <div className="flex justify-end pt-2">
+        <div className="flex justify-end">
           <Button size="lg" onClick={start}>
-            Join board
+            Continue
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>

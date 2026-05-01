@@ -111,14 +111,16 @@ export default function ParticipantPortfolioPage() {
       </div>
 
       <article className="print-surface space-y-12">
-        <section className="print-title-page space-y-4 border-b pb-10">
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            Reflection Portfolio
+        <section className="print-title-page space-y-4 border-b border-border/40 pb-10">
+          <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem]">
+            Reflection portfolio
           </p>
-          <h1 className="font-display text-4xl leading-tight tracking-tight">
+          <h1 className="font-display text-4xl leading-tight tracking-tight md:text-5xl">
             {participant.name}
           </h1>
-          <p className="text-lg text-foreground/80">{group.name}</p>
+          <p className="font-display italic text-lg text-foreground/75">
+            {group.name}
+          </p>
           {dateRange && (
             <p className="text-sm text-muted-foreground">
               {formatDate(dateRange.first)} – {formatDate(dateRange.last)} ·{" "}

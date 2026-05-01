@@ -12,15 +12,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { CollaborativeBoard } from "@/components/collaborative-board";
+import { QrPlaceholder } from "@/components/qr-placeholder";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -67,7 +62,7 @@ export default function FacilitatorConsolePage({ params }: Props) {
     return (
       <Card className="mt-8">
         <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
-          <div className="grid h-12 w-12 place-items-center rounded-full bg-accent text-accent-foreground">
+          <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
             <Presentation className="h-5 w-5" />
           </div>
           <h1 className="font-display text-2xl tracking-tight">
@@ -132,145 +127,130 @@ export default function FacilitatorConsolePage({ params }: Props) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <div>
         <Button asChild variant="ghost" size="sm">
           <Link href="/app/workshops">
             <ArrowLeft className="h-4 w-4" />
-            Back to workshops
+            All workshops
           </Link>
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="mb-2 flex items-center gap-2">
-            <StatusBadge status={workshop.status} />
-            <span className="text-xs text-muted-foreground">
+      {/* Full-bleed serif header */}
+      <header className="space-y-3">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0 flex-1 space-y-2">
+            <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem]">
               Facilitator: {facilitatorName}
-            </span>
+            </p>
+            <h1 className="font-display text-4xl leading-[1.05] tracking-tight md:text-5xl">
+              {workshop.title}
+            </h1>
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <StatusBadge status={workshop.status} />
+            </div>
           </div>
-          <h1 className="font-display text-3xl tracking-tight sm:text-4xl">
-            {workshop.title}
-          </h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
           <StatusToggle current={workshop.status} onChange={setStatus} />
         </div>
-      </div>
+        <hr className="rule-soft mt-2" />
+      </header>
 
-      <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
-        <Card className="bg-gradient-to-br from-primary/[0.05] via-card to-secondary/[0.05]">
-          <CardHeader>
-            <CardTitle className="font-display">Join code</CardTitle>
-            <CardDescription>
-              Project this on screen. Anyone in the room can use it to join.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={copyJoinCode}
-                className="group inline-flex items-center gap-2 rounded-2xl border border-border/70 bg-card px-5 py-3 transition-all hover:border-primary/40 hover:shadow-md"
+      {/* Numbered ledger: 01 join code · 02 QR · 03 board */}
+      <section className="space-y-12">
+        <Ledger number="01" title="Join code" hint="Project on screen.">
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={copyJoinCode}
+              aria-label="Copy join code"
+              className={cn(
+                "group inline-flex flex-col items-start gap-2 rounded-3xl border border-border/60 bg-card/40 px-8 py-6 transition-all",
+                "hover:border-primary/40 hover:bg-card/60",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              )}
+            >
+              <span className="margin-note uppercase tracking-[0.3em] text-[0.65rem]">
+                /w/
+              </span>
+              <span className="font-mono text-5xl font-semibold uppercase tracking-[0.22em] text-foreground sm:text-6xl">
+                {workshop.joinCode}
+              </span>
+              <span className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                {copied ? (
+                  <span className="inline-flex items-center gap-1 text-primary">
+                    <Check className="h-3 w-3" />
+                    Copied
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 group-hover:text-foreground/80">
+                    <Copy className="h-3 w-3" />
+                    Tap to copy
+                  </span>
+                )}
+              </span>
+            </button>
+            <Button variant="outline" size="sm" onClick={copyJoinUrl}>
+              <Copy className="h-4 w-4" />
+              Copy join link
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Participants visit{" "}
+              <span className="font-mono text-foreground/85">
+                /w/{workshop.joinCode}
+              </span>{" "}
+              and enter their first name.
+            </p>
+          </div>
+        </Ledger>
+
+        <Ledger number="02" title="QR for the room" hint="Scan to join.">
+          <QrPlaceholder seed={workshop.joinCode} size={208} tone="primary" />
+        </Ledger>
+
+        <Ledger
+          number="03"
+          title="Live board"
+          hint="Notes appear in real time across all open tabs."
+          action={
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setPromptDraft(board.prompt);
+                  setEditPromptOpen(true);
+                }}
               >
-                <span className="font-mono text-4xl font-semibold tracking-[0.25em] sm:text-5xl">
-                  {workshop.joinCode}
-                </span>
-                <span className="text-muted-foreground group-hover:text-foreground">
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </span>
-              </button>
-              <Button variant="outline" size="sm" onClick={copyJoinUrl}>
-                <Copy className="h-4 w-4" />
-                Copy join link
+                <PencilLine className="h-4 w-4" />
+                Edit prompt
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setConfirmClear(true)}
+                disabled={board.notes.length === 0}
+              >
+                <Eraser className="h-4 w-4" />
+                Clear notes
               </Button>
             </div>
-            <div className="text-xs text-muted-foreground">
-              Participants visit{" "}
-              <span className="font-mono text-foreground/80">/w/{workshop.joinCode}</span>{" "}
-              and enter their first name.
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-display">QR for the room</CardTitle>
-            <CardDescription>Quick scan-and-join.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div
-              aria-hidden
-              className="grid aspect-square w-full max-w-[200px] grid-cols-8 gap-0.5 rounded-2xl border border-border/70 bg-card p-3"
-            >
-              {Array.from({ length: 64 }).map((_, i) => {
-                // deterministic pseudo-random using join code
-                const seed =
-                  workshop.joinCode.charCodeAt(i % workshop.joinCode.length) +
-                  i * 7;
-                const filled = seed % 3 !== 0;
-                return (
-                  <div
-                    key={i}
-                    className={cn(
-                      "aspect-square rounded-[2px]",
-                      filled ? "bg-foreground" : "bg-transparent",
-                    )}
-                  />
-                );
-              })}
-            </div>
-            <p className="mt-3 text-[11px] text-muted-foreground">
-              Placeholder pattern — share the join code or link for now.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="font-display text-xl tracking-tight">Live board</h2>
-          <p className="text-xs text-muted-foreground">
-            Notes appear here in real time across all open tabs.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setPromptDraft(board.prompt);
-              setEditPromptOpen(true);
-            }}
-          >
-            <PencilLine className="h-4 w-4" />
-            Edit prompt
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setConfirmClear(true)}
-            disabled={board.notes.length === 0}
-          >
-            <Eraser className="h-4 w-4" />
-            Clear notes
-          </Button>
-        </div>
-      </div>
-
-      <CollaborativeBoard
-        boardId={board.id}
-        authorName={facilitatorName}
-        mode="facilitator"
-      />
+          }
+        >
+          <CollaborativeBoard
+            boardId={board.id}
+            authorName={facilitatorName}
+            mode="facilitator"
+          />
+        </Ledger>
+      </section>
 
       <Dialog open={editPromptOpen} onOpenChange={setEditPromptOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit board prompt</DialogTitle>
             <DialogDescription>
-              The new prompt will appear above the board for everyone.
+              The new prompt appears above the board for everyone.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
@@ -310,6 +290,43 @@ export default function FacilitatorConsolePage({ params }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function Ledger({
+  number,
+  title,
+  hint,
+  action,
+  children,
+}: {
+  number: string;
+  title: string;
+  hint?: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-[auto_1fr]">
+      <div className="sm:pt-1">
+        <span
+          aria-hidden
+          className="font-display text-5xl leading-none text-foreground/30 tabular-nums sm:text-6xl"
+        >
+          {number}
+        </span>
+      </div>
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="font-display text-2xl tracking-tight">{title}</h2>
+            {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
+          </div>
+          {action}
+        </div>
+        {children}
+      </div>
     </div>
   );
 }

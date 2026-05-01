@@ -54,7 +54,7 @@ export default function WorkshopBoardPage({ params }: Props) {
     return (
       <Card className="mt-12">
         <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
-          <div className="grid h-12 w-12 place-items-center rounded-full bg-accent text-accent-foreground">
+          <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
             <Presentation className="h-5 w-5" />
           </div>
           <h1 className="font-display text-2xl tracking-tight">
@@ -89,20 +89,26 @@ export default function WorkshopBoardPage({ params }: Props) {
   if (!name) return null;
 
   return (
-    <div className="space-y-6 pt-2">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <Badge variant="primary" className="mb-2">
-            {workshop.status === "live" ? "Live" : "Workshop"}
-          </Badge>
-          <h1 className="font-display text-3xl tracking-tight sm:text-4xl">
+    <div className="space-y-8 pt-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="space-y-2">
+          <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem]">
+            Workshop · {upper}
+          </p>
+          <h1 className="font-display text-3xl leading-tight tracking-tight md:text-4xl">
             {workshop.title}
           </h1>
+          <Badge variant={workshop.status === "live" ? "primary" : "outline"}>
+            {workshop.status === "live" ? "Live" : "Workshop"}
+          </Badge>
         </div>
         <div className="text-xs text-muted-foreground">
-          Posting as <span className="font-medium text-foreground/80">{name}</span>
+          Posting as{" "}
+          <span className="font-medium text-foreground/85">{name}</span>
         </div>
       </div>
+
+      <hr className="rule-soft" />
 
       <CollaborativeBoard
         boardId={board.id}

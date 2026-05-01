@@ -41,11 +41,11 @@ export function TriageCard({ reflection, href, showScore = true }: Props) {
           {a && showScore && (
             <span
               className={cn(
-                "inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold",
-                color === "sunny" && "bg-triage-sunny text-white",
-                color === "orange" && "bg-triage-orange text-white",
-                color === "blue" && "bg-triage-blue text-white",
-                color === "rose" && "bg-triage-rose text-white",
+                "inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-background",
+                color === "sunny" && "bg-triage-sunny",
+                color === "orange" && "bg-triage-orange",
+                color === "blue" && "bg-triage-blue",
+                color === "rose" && "bg-triage-rose",
               )}
               aria-label={`Reflection level ${a.reflectionLevel} of 4`}
             >

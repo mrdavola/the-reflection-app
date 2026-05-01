@@ -293,17 +293,18 @@ export default function ActivitySetupPage() {
         </Button>
       </div>
 
-      <div className="mb-8 space-y-2">
+      <div className="mb-10 space-y-2">
+        <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem]">
+          Designing for {group.name} ·{" "}
+          {activity.status === "draft" ? "Draft" : "Assigned"}
+        </p>
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Activity title"
-          className="border-0 bg-transparent px-0 font-display text-3xl tracking-tight shadow-none focus-visible:ring-0 md:text-4xl !h-auto"
+          className="border-0 bg-transparent px-0 font-display text-4xl tracking-tight shadow-none focus-visible:ring-0 md:text-5xl !h-auto"
           maxLength={120}
         />
-        <p className="text-sm text-muted-foreground">
-          Designing for {group.name} · {activity.status === "draft" ? "Draft" : "Assigned"}
-        </p>
       </div>
 
       <div className="space-y-8">

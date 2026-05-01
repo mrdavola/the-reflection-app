@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Presentation } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -67,17 +67,17 @@ export default function NewWorkshopPage() {
         </Button>
       </div>
 
-      <div className="mb-8 flex items-start gap-4">
-        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-accent text-accent-foreground">
-          <Presentation className="h-6 w-6" />
-        </div>
-        <div>
-          <h1 className="font-display text-3xl tracking-tight">New workshop</h1>
-          <p className="mt-1 text-foreground/75">
-            Give your session a title and an opening prompt. Participants will see
-            the prompt above the shared board.
-          </p>
-        </div>
+      <div className="mb-10">
+        <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem]">
+          New workshop
+        </p>
+        <h1 className="mt-2 font-display text-4xl tracking-tight md:text-5xl">
+          Live session
+        </h1>
+        <p className="mt-3 max-w-prose text-foreground/70">
+          Give your session a title and an opening prompt. Participants see the
+          prompt above the shared board.
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">

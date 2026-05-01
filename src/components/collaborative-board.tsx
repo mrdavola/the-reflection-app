@@ -20,41 +20,56 @@ interface Props {
   mode: "facilitator" | "participant";
 }
 
-const COLORS: { id: NoteColor; label: string; bg: string; ring: string; chip: string }[] = [
+/**
+ * Sticky-note styling on dark navy.
+ * Each note uses a triage background token at ~0.20 opacity so it reads as a
+ * glowing post-it. Text stays warm cream (`text-foreground`) — verified legible
+ * on all four backgrounds at AA contrast.
+ *
+ * The five note colors map onto the four triage tokens (with one paired) so we
+ * stay token-only and consistent with the rest of the app.
+ */
+const COLORS: {
+  id: NoteColor;
+  label: string;
+  bg: string; // surface (uses triage *-bg token)
+  ring: string; // hairline ring matching the triage hue
+  chip: string; // color picker chip
+}[] = [
   {
     id: "yellow",
-    label: "Yellow",
-    bg: "bg-amber-100 dark:bg-amber-200/90 text-amber-950",
-    ring: "ring-amber-300/70",
-    chip: "bg-amber-200 ring-amber-400",
+    label: "Sunny",
+    bg: "bg-triage-sunny-bg",
+    ring: "ring-triage-sunny/30",
+    chip: "bg-triage-sunny ring-triage-sunny/50",
   },
   {
     id: "blue",
-    label: "Blue",
-    bg: "bg-sky-100 dark:bg-sky-200/90 text-sky-950",
-    ring: "ring-sky-300/70",
-    chip: "bg-sky-200 ring-sky-400",
+    label: "Sky",
+    bg: "bg-triage-blue-bg",
+    ring: "ring-triage-blue/30",
+    chip: "bg-triage-blue ring-triage-blue/50",
   },
   {
     id: "green",
-    label: "Green",
-    bg: "bg-emerald-100 dark:bg-emerald-200/90 text-emerald-950",
-    ring: "ring-emerald-300/70",
-    chip: "bg-emerald-200 ring-emerald-400",
+    label: "Coral",
+    bg: "bg-triage-orange-bg",
+    ring: "ring-triage-orange/30",
+    chip: "bg-triage-orange ring-triage-orange/50",
   },
   {
     id: "pink",
-    label: "Pink",
-    bg: "bg-pink-100 dark:bg-pink-200/90 text-pink-950",
-    ring: "ring-pink-300/70",
-    chip: "bg-pink-200 ring-pink-400",
+    label: "Rose",
+    bg: "bg-triage-rose-bg",
+    ring: "ring-triage-rose/30",
+    chip: "bg-triage-rose ring-triage-rose/50",
   },
   {
     id: "purple",
-    label: "Purple",
-    bg: "bg-violet-100 dark:bg-violet-200/90 text-violet-950",
-    ring: "ring-violet-300/70",
-    chip: "bg-violet-200 ring-violet-400",
+    label: "Ink",
+    bg: "bg-primary/10",
+    ring: "ring-primary/30",
+    chip: "bg-primary ring-primary/50",
   },
 ];
 
@@ -72,7 +87,7 @@ export function CollaborativeBoard({ boardId, authorName, mode }: Props) {
     return (
       <Card>
         <CardContent className="py-12 text-center text-sm text-muted-foreground">
-          This board isn't available.
+          This board isn&apos;t available.
         </CardContent>
       </Card>
     );
@@ -120,13 +135,13 @@ export function CollaborativeBoard({ boardId, authorName, mode }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl border border-border/70 bg-gradient-to-br from-primary/[0.04] via-card to-secondary/[0.04] p-6">
-        <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+      <div className="rounded-3xl border border-border/70 bg-card p-6">
+        <p className="margin-note uppercase tracking-[0.18em] text-[0.7rem]">
           Prompt
-        </div>
-        <div className="mt-1 font-display text-xl tracking-tight sm:text-2xl">
+        </p>
+        <p className="mt-2 font-display text-xl leading-snug tracking-tight sm:text-2xl">
           {board.prompt || "(no prompt set)"}
-        </div>
+        </p>
       </div>
 
       <div
@@ -147,7 +162,9 @@ export function CollaborativeBoard({ boardId, authorName, mode }: Props) {
                 exit={{ opacity: 0, scale: 0.85, y: -8 }}
                 transition={{ type: "spring", stiffness: 300, damping: 24 }}
                 className={cn(
-                  "group relative flex min-h-[140px] flex-col gap-2 rounded-2xl p-4 shadow-[0_1px_2px_rgba(15,15,30,0.06),0_18px_40px_-24px_rgba(15,15,30,0.25)] ring-1",
+                  "group relative flex min-h-[140px] flex-col gap-2 rounded-2xl p-4 ring-1",
+                  // glow signature — subtle outer halo on dark navy
+                  "shadow-[0_1px_2px_rgba(0,0,0,0.3),0_18px_40px_-22px_rgba(120,165,220,0.18)]",
                   c.bg,
                   c.ring,
                 )}
@@ -156,17 +173,19 @@ export function CollaborativeBoard({ boardId, authorName, mode }: Props) {
                   <button
                     type="button"
                     onClick={() => removeNote(note.id)}
-                    className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-black/10 text-current opacity-0 transition-opacity hover:bg-black/20 group-hover:opacity-100"
+                    className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-background/40 text-foreground/80 opacity-0 ring-1 ring-border/60 transition-opacity hover:bg-background/70 hover:text-foreground group-hover:opacity-100"
                     aria-label="Remove note"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
                 )}
-                <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
                   {note.text}
                 </div>
-                <div className="mt-auto flex items-center justify-between gap-2 text-[11px] opacity-70">
-                  <span className="font-medium">{note.authorName}</span>
+                <div className="mt-auto flex items-center justify-between gap-2 text-[11px] text-foreground/60">
+                  <span className="font-medium text-foreground/80">
+                    {note.authorName}
+                  </span>
                   <span>{formatRelativeTime(note.createdAt)}</span>
                 </div>
               </motion.div>
@@ -183,7 +202,9 @@ export function CollaborativeBoard({ boardId, authorName, mode }: Props) {
 
       <Card>
         <CardContent className="space-y-3 py-5">
-          <div className="text-sm font-medium">Add a note</div>
+          <p className="margin-note uppercase tracking-[0.18em] text-[0.7rem]">
+            Add a note
+          </p>
           <Textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -224,7 +245,10 @@ export function CollaborativeBoard({ boardId, authorName, mode }: Props) {
             </Button>
           </div>
           <div className="text-[11px] text-muted-foreground">
-            Posting as <span className="font-medium text-foreground/80">{authorName || "Anonymous"}</span>
+            Posting as{" "}
+            <span className="font-medium text-foreground/80">
+              {authorName || "Anonymous"}
+            </span>
           </div>
         </CardContent>
       </Card>

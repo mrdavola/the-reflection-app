@@ -70,10 +70,13 @@ export default function NewActivityPage() {
       </div>
 
       <div className="mb-10">
-        <h1 className="font-display text-3xl tracking-tight md:text-4xl">
+        <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem]">
+          {group.name}
+        </p>
+        <h1 className="mt-2 font-display text-4xl tracking-tight md:text-5xl">
           New activity
         </h1>
-        <p className="mt-2 text-foreground/75">
+        <p className="mt-3 max-w-prose text-foreground/70">
           Pick a starting point. You can edit anything before you assign.
         </p>
       </div>

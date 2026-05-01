@@ -98,7 +98,7 @@ export default function GroupSettingsPage() {
             <CardTitle>Group not found</CardTitle>
             <CardDescription>This group may have been deleted.</CardDescription>
             <Button asChild className="mt-2">
-              <Link href="/app">Back to dashboard</Link>
+              <Link href="/app/groups">Back to groups</Link>
             </Button>
           </CardContent>
         </Card>
@@ -139,7 +139,7 @@ export default function GroupSettingsPage() {
     if (!group) return;
     store.deleteGroup(group.id);
     toast.success(`"${group.name}" deleted`);
-    router.push("/app");
+    router.push("/app/groups");
   }
 
   return (
@@ -153,9 +153,14 @@ export default function GroupSettingsPage() {
         </Button>
       </div>
 
-      <div className="mb-8">
-        <h1 className="font-display text-3xl tracking-tight">Group settings</h1>
-        <p className="mt-1 text-foreground/75">
+      <div className="mb-10">
+        <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem]">
+          {group.name}
+        </p>
+        <h1 className="mt-2 font-display text-4xl tracking-tight md:text-5xl">
+          Group settings
+        </h1>
+        <p className="mt-3 max-w-prose text-foreground/70">
           Update name, grade band, access, and defaults for this group.
         </p>
       </div>
