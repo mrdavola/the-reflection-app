@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Clock, Filter, GraduationCap, LibraryBig, Plus, Search, Sparkles } from "lucide-react";
+import { ArrowRight, Filter, GraduationCap, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -80,7 +80,6 @@ function LibraryPageInner() {
 
   function handleUseTemplate(template: ActivityTemplate) {
     if (fromGroupId) {
-      // bypass picker
       createFromTemplate(template, fromGroupId);
       return;
     }
@@ -110,23 +109,21 @@ function LibraryPageInner() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <Badge variant="primary" className="mb-2">
-            <LibraryBig className="h-3 w-3" />
-            Activity library
-          </Badge>
-          <h1 className="font-display text-3xl tracking-tight md:text-4xl">
-            Reflection activities, ready to go.
-          </h1>
-          <p className="mt-1 max-w-xl text-sm text-foreground/75">
-            Pick a template, drop it into a group, and share the link. Every template is editable.
-          </p>
-        </div>
-      </div>
+    <div className="space-y-12">
+      <header className="space-y-3">
+        <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem]">
+          No.&nbsp;01 — Activity library
+        </p>
+        <h1 className="font-display text-[clamp(2.25rem,4.5vw,3.25rem)] font-medium leading-[1.05] tracking-[-0.02em]">
+          Reflection activities, ready to lift off the page.
+        </h1>
+        <p className="prose-measure text-foreground/70">
+          Pick a template, drop it into a group, and share the link. Every
+          template is editable.
+        </p>
+      </header>
 
-      <Card className="bg-gradient-to-br from-primary/[0.03] via-card to-secondary/[0.03]">
+      <Card className="bg-surface">
         <CardContent className="grid gap-3 py-5 lg:grid-cols-12">
           <div className="relative lg:col-span-5">
             <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -177,7 +174,7 @@ function LibraryPageInner() {
                 <SelectItem value="all">All focuses</SelectItem>
                 {FOCUS_OPTIONS.map((f) => (
                   <SelectItem key={f.id} value={f.id}>
-                    {f.emoji} {f.label}
+                    {f.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -188,12 +185,14 @@ function LibraryPageInner() {
 
       {filtered.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
-            <div className="grid h-12 w-12 place-items-center rounded-full bg-accent text-accent-foreground">
-              <Search className="h-5 w-5" />
-            </div>
-            <CardTitle>No matches</CardTitle>
-            <CardDescription className="max-w-sm">
+          <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
+            <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem]">
+              No matches
+            </p>
+            <CardTitle className="font-display text-2xl">
+              Nothing here for that combination.
+            </CardTitle>
+            <CardDescription className="prose-measure">
               Try clearing a filter or searching for a broader term.
             </CardDescription>
           </CardContent>
@@ -216,26 +215,26 @@ function LibraryPageInner() {
           {previewing && (
             <>
               <DialogHeader>
-                <Badge variant="primary" className="mb-1 self-start">
-                  {getFocus(previewing.focus).emoji} {getFocus(previewing.focus).label}
-                </Badge>
-                <DialogTitle className="font-display text-2xl">
+                <p className="margin-note uppercase tracking-[0.3em] text-[0.65rem]">
+                  {getFocus(previewing.focus).label}
+                </p>
+                <DialogTitle className="font-display text-2xl leading-tight">
                   {previewing.title}
                 </DialogTitle>
                 <DialogDescription>{previewing.objective}</DialogDescription>
               </DialogHeader>
               <div className="space-y-3">
-                <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <p className="margin-note uppercase tracking-[0.3em] text-[0.65rem]">
                   Prompts
-                </div>
+                </p>
                 <ol className="space-y-2">
                   {previewing.prompts.map((p, i) => (
                     <li
                       key={p.id}
-                      className="rounded-2xl bg-accent/40 p-4 text-sm leading-relaxed"
+                      className="rounded-xl border border-border bg-surface p-4 text-[0.95rem] leading-relaxed text-foreground/85"
                     >
                       <span className="mr-2 font-mono text-xs text-muted-foreground">
-                        0{i + 1}
+                        {String(i + 1).padStart(2, "0")}
                       </span>
                       {p.text}
                     </li>
@@ -292,43 +291,43 @@ function TemplateCard({
 }) {
   const focus = getFocus(template.focus);
   return (
-    <Card className="group flex h-full flex-col overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-lg">
-      <div className="bg-gradient-to-br from-primary/[0.06] to-secondary/[0.06] px-5 pt-5">
-        <Badge variant="primary" className="mb-2">
-          {focus.emoji} {focus.label}
-        </Badge>
-        <CardTitle className="font-display text-xl leading-tight tracking-tight">
+    <Card className="group flex h-full flex-col bg-card transition-colors hover:border-primary/30">
+      <CardHeader className="space-y-2.5">
+        <p className="margin-note uppercase tracking-[0.3em] text-[0.65rem]">
+          {focus.label}
+        </p>
+        <CardTitle className="font-display text-[1.25rem] leading-[1.18] tracking-[-0.016em]">
           {template.title}
         </CardTitle>
-        <div className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
+        <p className="font-display italic text-[0.95rem] leading-[1.45] text-foreground/55">
           {template.category}
-        </div>
-      </div>
-      <CardContent className="flex flex-1 flex-col gap-3 pt-4">
-        <p className="text-sm leading-relaxed text-foreground/80">
+        </p>
+      </CardHeader>
+      <CardContent className="flex flex-1 flex-col gap-4">
+        <p className="text-[0.875rem] leading-[1.55] text-foreground/70">
           {template.description}
         </p>
         <div className="flex flex-wrap gap-1.5">
           {template.gradeBands.map((g) => {
             const gb = GRADE_BANDS.find((x) => x.id === g);
             return (
-              <Badge key={g} variant="muted">
+              <Badge key={g} variant="outline">
                 {gb?.label ?? g}
               </Badge>
             );
           })}
         </div>
-        <div className="mt-auto flex items-center justify-between gap-2 pt-3">
-          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="h-3.5 w-3.5" /> ~{template.estimatedMinutes} min
+        <div className="mt-auto flex items-center justify-between gap-2 border-t border-border/60 pt-4">
+          <span className="text-[0.7rem] uppercase tracking-[0.2em] text-foreground/40">
+            ~{template.estimatedMinutes} min
           </span>
           <div className="flex gap-1.5">
             <Button size="sm" variant="ghost" onClick={onPreview}>
               Preview
             </Button>
-            <Button size="sm" onClick={onUse}>
-              <Sparkles className="h-4 w-4" />
+            <Button size="sm" variant="ghost" onClick={onUse}>
               Use template
+              <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -390,7 +389,7 @@ function UseTemplateDialog({
     <>
       <DialogHeader>
         <DialogTitle className="font-display text-xl">
-          Use "{template.title}"
+          Use &ldquo;{template.title}&rdquo;
         </DialogTitle>
         <DialogDescription>
           Choose where this activity should live. You can edit everything after.
@@ -403,32 +402,30 @@ function UseTemplateDialog({
             <button
               type="button"
               onClick={() => setMode("existing")}
-              className={
-                "rounded-xl border p-3 text-left text-sm transition-all " +
-                (mode === "existing"
-                  ? "border-primary/50 bg-primary/5"
-                  : "border-border bg-card hover:bg-muted")
-              }
+              className={`rounded-xl border p-3 text-left text-sm transition-colors ${
+                mode === "existing"
+                  ? "border-primary/50 bg-primary/10"
+                  : "border-border bg-card hover:border-primary/30"
+              }`}
             >
-              <div className="flex items-center gap-2 font-medium">
+              <div className="flex items-center gap-2 font-medium text-foreground">
                 <GraduationCap className="h-4 w-4" />
                 Existing group
               </div>
               <div className="text-xs text-muted-foreground">
-                Drop into a group you've already made.
+                Drop into a group you&rsquo;ve already made.
               </div>
             </button>
             <button
               type="button"
               onClick={() => setMode("new")}
-              className={
-                "rounded-xl border p-3 text-left text-sm transition-all " +
-                (mode === "new"
-                  ? "border-primary/50 bg-primary/5"
-                  : "border-border bg-card hover:bg-muted")
-              }
+              className={`rounded-xl border p-3 text-left text-sm transition-colors ${
+                mode === "new"
+                  ? "border-primary/50 bg-primary/10"
+                  : "border-border bg-card hover:border-primary/30"
+              }`}
             >
-              <div className="flex items-center gap-2 font-medium">
+              <div className="flex items-center gap-2 font-medium text-foreground">
                 <Plus className="h-4 w-4" />
                 New group
               </div>
@@ -496,8 +493,8 @@ function UseTemplateDialog({
           Cancel
         </Button>
         <Button onClick={confirm}>
-          <Sparkles className="h-4 w-4" />
           Add to group
+          <ArrowRight className="h-4 w-4" />
         </Button>
       </DialogFooter>
     </>

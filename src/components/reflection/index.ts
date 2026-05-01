@@ -3,3 +3,4 @@ export { RechargeScreen } from "./recharge-screen";
 export { InsightsLayout } from "./insights-layout";
 export type { InsightsLayoutProps, InsightAction } from "./insights-layout";
 export { MicDeniedNotice } from "./mic-denied-notice";
+export { VoicePersonaSettings } from "./voice-persona-settings";
