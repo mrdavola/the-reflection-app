@@ -23,6 +23,7 @@ import {
   ReflectionStage,
   RechargeScreen,
   InsightsLayout,
+  MicDeniedNotice,
 } from "@/components/reflection";
 import { useReflectionFlow, type ReflectionInsight } from "@/lib/use-reflection-flow";
 import { useTTS } from "@/lib/use-tts";
@@ -179,6 +180,7 @@ export default function PersonalRunPage() {
         silenceCountdown={reflection.silenceCountdown}
         questionLabel={`Question ${pad2(reflection.promptIndex + 1)} of ${pad2(reflection.totalEstimate)}`}
         error={reflection.error}
+        speechSupported={reflection.speechSupported}
         onStop={() => reflection.stopRecording()}
       />
     );
@@ -250,46 +252,50 @@ export default function PersonalRunPage() {
                 {reflection.currentPrompt}
               </h1>
 
-              {ttsEnabled && (ttsLoading || ttsPlaying) && (
-                <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem] text-primary/80 inline-flex items-center gap-2">
-                  {ttsLoading ? (
-                    <>
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Warming up voice…
-                    </>
-                  ) : (
-                    <>
-                      <Volume2 className="h-3 w-3" />
-                      Speaking
-                    </>
+              {reflection.error === "microphone_denied" ? (
+                <MicDeniedNotice />
+              ) : (
+                <>
+                  {ttsEnabled && (ttsLoading || ttsPlaying) && (
+                    <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem] text-primary/80 inline-flex items-center gap-2">
+                      {ttsLoading ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Warming up voice…
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="h-3 w-3" />
+                          Speaking
+                        </>
+                      )}
+                    </p>
                   )}
-                </p>
-              )}
 
-              <button
-                type="button"
-                onClick={() => {
-                  stopTts();
-                  void reflection.startRecording();
-                }}
-                aria-label="Start recording"
-                className="group relative grid h-16 w-16 place-items-center rounded-full border border-primary/40 bg-background transition-all hover:border-primary/70 hover:shadow-[0_0_28px_-4px_oklch(0.78_0.105_230/0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <Mic className="h-6 w-6 text-primary group-hover:scale-105 transition-transform" />
-              </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      stopTts();
+                      void reflection.startRecording();
+                    }}
+                    aria-label="Start recording"
+                    className="group relative grid h-16 w-16 place-items-center rounded-full border border-primary/40 bg-background transition-all hover:border-primary/70 hover:shadow-[0_0_28px_-4px_oklch(0.78_0.105_230/0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <Mic className="h-6 w-6 text-primary group-hover:scale-105 transition-transform" />
+                  </button>
 
-              <p className="text-[0.75rem] text-foreground/50">
-                {ttsEnabled
-                  ? "Recording will start automatically when the prompt finishes — or tap the mic to begin now."
-                  : "Tap when you're ready. Speak as long as you need."}
-              </p>
+                  <p className="text-[0.75rem] text-foreground/50">
+                    {ttsEnabled
+                      ? "Recording will start automatically when the prompt finishes — or tap the mic to begin now."
+                      : "Tap when you're ready. Speak as long as you need."}
+                  </p>
 
-              {reflection.error && (
-                <p role="alert" className="text-[0.75rem] text-destructive/80">
-                  {reflection.error === "microphone_denied"
-                    ? "We couldn't access the microphone. Check your browser permissions."
-                    : "Something interrupted the mic. Please try again."}
-                </p>
+                  {reflection.error && (
+                    <p role="alert" className="text-[0.75rem] text-destructive/80">
+                      Something interrupted the mic. Please try again.
+                    </p>
+                  )}
+                </>
               )}
             </motion.section>
           )}

@@ -28,6 +28,7 @@ import {
   ReflectionStage,
   RechargeScreen,
   InsightsLayout,
+  MicDeniedNotice,
 } from "@/components/reflection";
 import {
   useReflectionFlow,
@@ -193,6 +194,7 @@ function ShareRunPageInner({ params }: Props) {
         silenceCountdown={reflection.silenceCountdown}
         questionLabel={`Question ${pad2(reflection.promptIndex + 1)} of ${pad2(reflection.totalEstimate)}`}
         error={reflection.error}
+        speechSupported={reflection.speechSupported}
         onStop={() => reflection.stopRecording()}
       />
     );
@@ -263,25 +265,29 @@ function ShareRunPageInner({ params }: Props) {
                 {reflection.currentPrompt}
               </h1>
 
-              <button
-                type="button"
-                onClick={() => void reflection.startRecording()}
-                aria-label="Start recording"
-                className="group relative grid h-16 w-16 place-items-center rounded-full border border-primary/40 bg-background transition-all hover:border-primary/70 hover:shadow-[0_0_28px_-4px_oklch(0.78_0.105_230/0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <Mic className="h-6 w-6 text-primary group-hover:scale-105 transition-transform" />
-              </button>
+              {reflection.error === "microphone_denied" ? (
+                <MicDeniedNotice />
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => void reflection.startRecording()}
+                    aria-label="Start recording"
+                    className="group relative grid h-16 w-16 place-items-center rounded-full border border-primary/40 bg-background transition-all hover:border-primary/70 hover:shadow-[0_0_28px_-4px_oklch(0.78_0.105_230/0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <Mic className="h-6 w-6 text-primary group-hover:scale-105 transition-transform" />
+                  </button>
 
-              <p className="text-[0.75rem] text-foreground/50">
-                Tap when you&rsquo;re ready. Speak as long as you need.
-              </p>
+                  <p className="text-[0.75rem] text-foreground/50">
+                    Tap when you&rsquo;re ready. Speak as long as you need.
+                  </p>
 
-              {reflection.error && (
-                <p role="alert" className="text-[0.75rem] text-destructive/80">
-                  {reflection.error === "microphone_denied"
-                    ? "We couldn't access the microphone. Check your browser permissions."
-                    : "Something interrupted the mic. Please try again."}
-                </p>
+                  {reflection.error && (
+                    <p role="alert" className="text-[0.75rem] text-destructive/80">
+                      Something interrupted the mic. Please try again.
+                    </p>
+                  )}
+                </>
               )}
             </motion.section>
           )}

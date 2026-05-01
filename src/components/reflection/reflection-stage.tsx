@@ -29,6 +29,11 @@ interface Props {
   onStop: () => void;
   /** Optional error string to surface (mic permission, etc). */
   error?: string | null;
+  /** When false (e.g. Firefox), Web Speech is unavailable so we hide the live
+   *  transcript region and surface a small note that audio is still being
+   *  captured but won't be transcribed live. Defaults to true so existing
+   *  callers who haven't wired this prop keep the original behavior. */
+  speechSupported?: boolean;
 }
 
 export function ReflectionStage({
@@ -40,6 +45,7 @@ export function ReflectionStage({
   questionLabel,
   onStop,
   error,
+  speechSupported = true,
 }: Props) {
   const minimumReached = elapsedSeconds >= MINIMUM_RECORDING_SECONDS;
   const last60 = useMemo(() => takeLast(transcript, 60), [transcript]);
@@ -54,10 +60,15 @@ export function ReflectionStage({
       className="fixed inset-0 z-50 bg-background overflow-hidden"
     >
       {/* Ambient ripples — react to audio level */}
-      <RippleField intensity={Math.max(0.05, audioLevel / 100)} />
+      <div aria-hidden>
+        <RippleField intensity={Math.max(0.05, audioLevel / 100)} />
+      </div>
 
       {/* Glowing center dot */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <div
+        aria-hidden
+        className="absolute inset-0 flex items-center justify-center pointer-events-none"
+      >
         <GlowingDot audioLevel={audioLevel} />
       </div>
 
@@ -81,22 +92,34 @@ export function ReflectionStage({
       {/* Bottom stack: transcript / silence countdown / timer / stop */}
       <div className="absolute inset-x-0 bottom-0 px-6 pb-10 md:pb-14 pointer-events-none">
         <div className="mx-auto max-w-2xl flex flex-col items-center gap-6">
-          {/* Live transcript — the user's last words drift back into the dark */}
-          <div
-            aria-live="polite"
-            className="min-h-[2.5rem] w-full text-center transition-opacity duration-300"
-            style={{ opacity: transcriptOpacity }}
-          >
-            {last60 ? (
-              <p className="font-display italic text-[1rem] md:text-[1.125rem] leading-[1.5] text-foreground/70">
-                {last60.startsWith("…") ? last60 : last60}
+          {/* Live transcript — the user's last words drift back into the dark.
+              When the browser has no Web Speech (Firefox), there's nothing
+              to show, so we hide the region entirely and surface a small note
+              that audio is still being captured. */}
+          {speechSupported ? (
+            <div
+              aria-live="polite"
+              className="min-h-[2.5rem] w-full text-center transition-opacity duration-300"
+              style={{ opacity: transcriptOpacity }}
+            >
+              {last60 ? (
+                <p className="font-display italic text-[1rem] md:text-[1.125rem] leading-[1.5] text-foreground/70">
+                  {last60.startsWith("…") ? last60 : last60}
+                </p>
+              ) : (
+                <p className="font-display italic text-[1rem] md:text-[1.125rem] leading-[1.5] text-foreground/30">
+                  Speak when you&rsquo;re ready.
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="min-h-[2.5rem] w-full text-center">
+              <p className="font-display italic text-[0.95rem] md:text-[1rem] leading-[1.5] text-foreground/50 max-w-md mx-auto">
+                We can&rsquo;t transcribe in this browser, but your audio is
+                being captured. Tap End thought when finished.
               </p>
-            ) : (
-              <p className="font-display italic text-[1rem] md:text-[1.125rem] leading-[1.5] text-foreground/30">
-                Speak when you&rsquo;re ready.
-              </p>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Silence countdown — only visible during the final 3s before auto-stop */}
           <div className="h-5 text-center">
@@ -127,7 +150,11 @@ export function ReflectionStage({
             type="button"
             onClick={onStop}
             disabled={!minimumReached}
-            aria-label={minimumReached ? "End thought" : "Keep reflecting"}
+            aria-label={
+              minimumReached
+                ? "End thought"
+                : "Stop recording (locked until 5 seconds)"
+            }
             className={`pointer-events-auto inline-flex items-center gap-2 rounded-full px-6 h-11 text-[0.7rem] uppercase tracking-[0.3em] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
               minimumReached
                 ? "border border-primary/40 bg-background/40 text-foreground/80 hover:border-primary/70 hover:shadow-[0_0_24px_-4px_oklch(0.78_0.105_230/0.5)]"
