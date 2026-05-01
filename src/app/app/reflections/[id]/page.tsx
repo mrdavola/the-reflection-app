@@ -1,5 +1,19 @@
 "use client";
 
+/**
+ * Single-reflection detail — the document view.
+ *
+ * Vertical, serif-led, made for reading. Renders a Q/A ledger of every prompt
+ * + response, the four-key Master Educator insights block (via the shared
+ * <InsightsLayout> from the reflection module), audio playback for any
+ * audio-backed responses, and a quiet row of bottom actions.
+ *
+ * Cross-agent contract: this page consumes the InsightsLayoutProps shape
+ * (`insight`, `eyebrow?`, `actions?`, `className?`) exposed by Agent A and
+ * uses `deriveInsight()` from `@/lib/insights` (Agent E's extraction). If
+ * either contract changes, both surfaces must move together.
+ */
+
 import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,14 +23,14 @@ import {
   ClipboardCopy,
   Download,
   Loader2,
+  Printer,
+  RotateCcw,
   Sparkles,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { AnalysisCard } from "@/components/analysis-card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogClose,
@@ -27,7 +41,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
+import { InsightsLayout, type InsightAction } from "@/components/reflection";
+import { deriveInsight } from "@/lib/insights";
 import { getFocus } from "@/lib/focus-catalog";
 import { store, useStore } from "@/lib/storage";
 import { formatDate, formatDuration, formatRelativeTime } from "@/lib/utils";
@@ -44,32 +59,32 @@ export default function ReflectionDetailPage({ params }: Params) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    // Give useSyncExternalStore one tick to subscribe and pull from localStorage.
     setHydrated(true);
   }, []);
 
   if (!hydrated) {
     return (
       <div className="mx-auto flex max-w-3xl items-center justify-center py-24 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin" />
+        <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+        <span className="sr-only">Loading reflection</span>
       </div>
     );
   }
 
   if (!reflection) {
     return (
-      <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 py-20 text-center">
-        <div className="grid h-12 w-12 place-items-center rounded-full bg-muted text-muted-foreground">
-          <Sparkles className="h-5 w-5" />
-        </div>
-        <h1 className="font-display text-3xl tracking-tight">
-          We couldn&rsquo;t find that reflection
+      <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 py-24 text-center">
+        <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem]">
+          Not found
+        </p>
+        <h1 className="font-display text-[clamp(2rem,4vw,3rem)] leading-[1.05] tracking-[-0.02em]">
+          Reflection not found.
         </h1>
-        <p className="max-w-md text-foreground/70">
+        <p className="prose-measure text-foreground/65">
           It may have been deleted, or this link belongs to a different device.
           Reflections live in your browser.
         </p>
-        <Button asChild>
+        <Button asChild variant="ghost">
           <Link href="/app">
             <ArrowLeft className="h-4 w-4" />
             Back to dashboard
@@ -79,7 +94,12 @@ export default function ReflectionDetailPage({ params }: Params) {
     );
   }
 
-  return <ReflectionDetail reflection={reflection} onDelete={() => router.push("/app")} />;
+  return (
+    <ReflectionDetail
+      reflection={reflection}
+      onDelete={() => router.push("/app")}
+    />
+  );
 }
 
 function ReflectionDetail({
@@ -89,35 +109,37 @@ function ReflectionDetail({
   reflection: Reflection;
   onDelete: () => void;
 }) {
-  const focusMeta = useMemo(() => getFocus(reflection.focus), [reflection.focus]);
-  const activity = useStore((s) =>
-    reflection.activityId
-      ? s.activities.find((a) => a.id === reflection.activityId)
-      : undefined,
+  const focus = useMemo(() => getFocus(reflection.focus), [reflection.focus]);
+
+  const transcripts = useMemo(
+    () => reflection.responses.map((r) => r.text || ""),
+    [reflection.responses],
+  );
+  const insight = useMemo(
+    () => deriveInsight(reflection.analysis ?? null, transcripts),
+    [reflection.analysis, transcripts],
   );
 
   const transcriptText = useMemo(
     () => buildTranscript(reflection),
     [reflection],
   );
-  const insightsText = useMemo(
-    () => buildInsights(reflection),
-    [reflection],
-  );
 
-  function copy(text: string, label: string) {
+  function copyTranscript() {
     if (!navigator.clipboard) {
       toast.error("Clipboard isn't available in this browser.");
       return;
     }
-    navigator.clipboard.writeText(text).then(
-      () => toast.success(`${label} copied`),
+    navigator.clipboard.writeText(transcriptText).then(
+      () => toast.success("Transcript copied"),
       () => toast.error("Couldn't copy to clipboard"),
     );
   }
 
-  function download() {
-    const blob = new Blob([transcriptText], { type: "text/plain;charset=utf-8" });
+  function downloadTranscript() {
+    const blob = new Blob([transcriptText], {
+      type: "text/plain;charset=utf-8",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -135,146 +157,178 @@ function ReflectionDetail({
     onDelete();
   }
 
-  return (
-    <div className="mx-auto max-w-3xl space-y-8 py-2">
-      <Button asChild size="sm" variant="ghost" className="-ml-2">
-        <Link href="/app">
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Link>
-      </Button>
+  function handlePrint() {
+    if (typeof window !== "undefined") window.print();
+  }
 
-      <header className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-          <Badge variant="muted" className="gap-1">
-            <span>{focusMeta.emoji}</span>
-            {focusMeta.label}
-          </Badge>
+  const insightActions: InsightAction[] = [
+    {
+      label: "Reflect again",
+      href: "/app/personal",
+      icon: <RotateCcw className="h-3 w-3" aria-hidden />,
+    },
+    {
+      label: "Back to library",
+      href: "/app/library",
+      icon: <ArrowUpRight className="h-3 w-3" aria-hidden />,
+    },
+  ];
+
+  return (
+    <article className="mx-auto max-w-3xl px-4 py-2">
+      <div className="flex items-center justify-between gap-3 print:hidden">
+        <Button asChild size="sm" variant="ghost" className="-ml-2">
+          <Link href="/app">
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Link>
+        </Button>
+        <div className="flex items-center gap-2">
           {reflection.activityId === null ? (
-            <Badge variant="outline">Personal</Badge>
+            <span className="margin-note uppercase tracking-[0.3em] text-[0.65rem]">
+              Personal
+            </span>
           ) : (
-            <Badge variant="outline">Group activity</Badge>
+            <span className="margin-note uppercase tracking-[0.3em] text-[0.65rem]">
+              Group activity
+            </span>
           )}
-          <span>·</span>
-          <span title={formatDate(reflection.createdAt)}>
-            {formatRelativeTime(reflection.createdAt)}
-          </span>
         </div>
-        <h1 className="font-display text-4xl leading-tight tracking-tight">
+      </div>
+
+      <header className="mt-10 space-y-4">
+        <p className="margin-note uppercase tracking-[0.3em] text-[0.7rem]">
+          {focus.label}
+        </p>
+        <h1 className="font-display text-[clamp(2.375rem,5vw,3rem)] font-medium leading-[1.04] tracking-[-0.02em] text-foreground">
           {reflection.objective || "Personal reflection"}
         </h1>
-        <p className="text-sm text-muted-foreground">
-          By {reflection.participantName} · {formatDate(reflection.createdAt)}
+        <p className="text-sm text-foreground/55">
+          By {reflection.participantName} ·{" "}
+          <span title={formatDate(reflection.createdAt)}>
+            {formatRelativeTime(reflection.createdAt)}
+          </span>{" "}
+          · {formatDate(reflection.createdAt)}
         </p>
         {reflection.participantId && reflection.groupId && (
-          <p className="text-sm">
+          <p className="text-sm print:hidden">
             <Link
               href={`/app/groups/${reflection.groupId}/participants/${reflection.participantId}`}
-              className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+              className="inline-flex items-center gap-1 text-primary hover:underline"
             >
-              View this learner&apos;s portfolio
+              View this learner&rsquo;s portfolio
               <ArrowUpRight className="h-3.5 w-3.5" />
             </Link>
           </p>
         )}
       </header>
 
-      {reflection.analysis ? (
-        <AnalysisCard
-          analysis={reflection.analysis}
-          showScore={reflection.scoreVisibility === "show"}
-          showTeacherFollowUp={reflection.activityId !== null}
-          rubric={activity?.rubric}
-        />
-      ) : (
+      <hr className="rule-soft my-10" />
+
+      {reflection.responses.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-10 text-center text-muted-foreground">
-            <Sparkles className="h-5 w-5" />
-            <p>This reflection doesn&rsquo;t have analysis yet.</p>
+            <Sparkles className="h-5 w-5" aria-hidden />
+            <p>No responses recorded for this reflection.</p>
           </CardContent>
         </Card>
+      ) : (
+        <section className="space-y-10">
+          {reflection.responses.map((r, i) => (
+            <div key={`${r.promptId}-${i}`} className="space-y-4">
+              <p className="margin-note uppercase tracking-[0.3em] text-[0.65rem]">
+                Question {String(i + 1).padStart(2, "0")}
+                {typeof r.durationSeconds === "number" && r.durationSeconds > 0
+                  ? ` · ${formatDuration(r.durationSeconds)}`
+                  : ""}
+              </p>
+              <p className="font-display text-[1.375rem] leading-[1.3] tracking-[-0.014em] text-foreground/90">
+                {r.promptText}
+              </p>
+              {r.text ? (
+                <p className="font-display italic text-[1rem] leading-[1.7] text-foreground/85">
+                  &ldquo;{r.text}&rdquo;
+                </p>
+              ) : (
+                <p className="text-[0.9rem] italic text-muted-foreground">
+                  No transcript saved.
+                </p>
+              )}
+              {r.audioBlobUrl ? (
+                <ResponseAudio
+                  audioBlobUrl={r.audioBlobUrl}
+                  participantName={reflection.participantName}
+                  index={i}
+                />
+              ) : null}
+              {i < reflection.responses.length - 1 && (
+                <hr className="rule-soft mt-8" />
+              )}
+            </div>
+          ))}
+        </section>
       )}
 
-      <section className="space-y-3">
-        <h2 className="font-display text-2xl tracking-tight">Your responses</h2>
-        <div className="space-y-3">
-          {reflection.responses.map((r, i) => (
-            <Card key={`${r.promptId}-${i}`}>
-              <CardHeader className="flex-row items-start justify-between gap-3">
-                <CardTitle className="text-base font-semibold leading-snug">
-                  {r.promptText}
-                </CardTitle>
-                <Badge variant="outline" className="shrink-0 capitalize">
-                  {r.inputType}
-                  {typeof r.durationSeconds === "number" && r.durationSeconds > 0
-                    ? ` · ${formatDuration(r.durationSeconds)}`
-                    : null}
-                </Badge>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {r.audioBlobUrl ? (
-                  <ResponseAudio
-                    audioBlobUrl={r.audioBlobUrl}
-                    participantName={reflection.participantName}
-                    index={i}
-                  />
-                ) : null}
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-                  {r.text || <span className="text-muted-foreground italic">No transcript saved.</span>}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
+      <hr className="rule-soft my-12" />
 
-      <Separator />
+      <InsightsLayout
+        insight={insight}
+        eyebrow={reflection.analysis ? "Insights" : "What surfaced"}
+        actions={insightActions}
+        className="px-0 py-8"
+      />
 
-      <section className="space-y-3">
-        <h2 className="font-display text-2xl tracking-tight">Actions</h2>
+      <hr className="rule-soft my-10 print:hidden" />
+
+      <section className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => copy(transcriptText, "Transcript")}>
+          <Button variant="ghost" size="sm" onClick={copyTranscript}>
             <ClipboardCopy className="h-4 w-4" />
             Copy transcript
           </Button>
-          <Button variant="outline" onClick={download}>
+          <Button variant="ghost" size="sm" onClick={downloadTranscript}>
             <Download className="h-4 w-4" />
-            Download transcript
+            Download
           </Button>
-          {reflection.analysis && (
-            <Button variant="outline" onClick={() => copy(insightsText, "Insights")}>
-              <ClipboardCopy className="h-4 w-4" />
-              Copy insights
-            </Button>
-          )}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="ghost" className="text-destructive hover:bg-destructive/10">
-                <Trash2 className="h-4 w-4" />
-                Delete
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Delete this reflection?</DialogTitle>
-                <DialogDescription>
-                  This removes the reflection from your browser. It can&rsquo;t be
-                  undone.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="ghost">Cancel</Button>
-                </DialogClose>
-                <Button variant="destructive" onClick={handleDelete}>
-                  Delete reflection
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button variant="ghost" size="sm" onClick={handlePrint}>
+            <Printer className="h-4 w-4" />
+            Print
+          </Button>
         </div>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="font-display text-xl">
+                Delete this reflection?
+              </DialogTitle>
+              <DialogDescription>
+                This removes the reflection from your browser. It can&rsquo;t
+                be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="ghost">Cancel</Button>
+              </DialogClose>
+              <Button variant="destructive" onClick={handleDelete}>
+                <Trash2 className="h-4 w-4" />
+                Delete reflection
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </section>
-    </div>
+    </article>
   );
 }
 
@@ -319,8 +373,10 @@ function ResponseAudio({
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const safeName =
-        (participantName || "reflection").trim().replace(/\s+/g, "-").toLowerCase() ||
-        "reflection";
+        (participantName || "reflection")
+          .trim()
+          .replace(/\s+/g, "-")
+          .toLowerCase() || "reflection";
       const a = document.createElement("a");
       a.href = url;
       a.download = `the-reflection-app-${safeName}-${index + 1}.webm`;
@@ -335,14 +391,14 @@ function ResponseAudio({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2 print:hidden">
       <audio
         src={audioBlobUrl}
         controls
-        className="w-full flex-1 min-w-0"
+        className="w-full min-w-0 flex-1"
         preload="none"
       />
-      <Button size="sm" variant="outline" onClick={downloadAudio}>
+      <Button size="sm" variant="ghost" onClick={downloadAudio}>
         <Download className="h-4 w-4" />
         Download audio
       </Button>
@@ -352,7 +408,7 @@ function ResponseAudio({
 
 function buildTranscript(r: Reflection): string {
   const lines: string[] = [];
-  lines.push(`The Reflection App — ${r.objective || "Personal reflection"}`);
+  lines.push(`Refleckt — ${r.objective || "Personal reflection"}`);
   lines.push(`Focus: ${getFocus(r.focus).label}`);
   lines.push(`Date: ${formatDate(r.createdAt)}`);
   lines.push(`By: ${r.participantName}`);
@@ -370,23 +426,4 @@ function buildTranscript(r: Reflection): string {
     lines.push(`Next step: ${r.analysis.suggestedNextStep}`);
   }
   return lines.join("\n");
-}
-
-function buildInsights(r: Reflection): string {
-  if (!r.analysis) return "";
-  const a = r.analysis;
-  return [
-    a.summary,
-    "",
-    `Level ${a.reflectionLevel} of 4 · ${a.understandingLabel} (${a.understandingScore}%)`,
-    "",
-    `Feedback: ${a.feedback}`,
-    `Suggested next step: ${a.suggestedNextStep}`,
-    "",
-    `Strengths: ${a.strengthsNoticed.join(", ")}`,
-    `Cognitive skills: ${a.keyCognitiveSkills.join(", ")}`,
-    `Mindset: ${a.mindset} — ${a.mindsetSummary}`,
-    `Tone: ${a.tone} — ${a.toneSummary}`,
-    `Hidden lesson: ${a.hiddenLesson}`,
-  ].join("\n");
 }
