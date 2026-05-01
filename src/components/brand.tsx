@@ -13,15 +13,16 @@ export function Brand({ className, href = "/app" }: { className?: string; href?:
       <BrandMark className="h-7 w-7 -mb-1.5" />
       <span className="text-foreground">
         Refleckt
-        <span aria-hidden className="text-[oklch(0.50_0.150_25)]">.</span>
+        <span aria-hidden className="text-primary">.</span>
       </span>
     </Link>
   );
 }
 
 /**
- * The mark reads as a bookplate stamp: a hairline serif "R" in a soft
- * paper square, with a single carmine annotation dot — a reader's mark.
+ * The mark reads as a bookplate stamp on dark: a hairline serif "R" inside a
+ * sky-tinted hollow square, with a single warm-cream annotation dot — a
+ * reader's mark, kept at night.
  */
 export function BrandMark({ className }: { className?: string }) {
   return (
@@ -38,8 +39,8 @@ export function BrandMark({ className }: { className?: string }) {
         width="29.5"
         height="29.5"
         rx="5"
-        fill="oklch(0.992 0.005 82)"
-        stroke="oklch(0.34 0.060 252)"
+        fill="none"
+        stroke="oklch(0.78 0.105 230)"
         strokeWidth="1.25"
       />
       <text
@@ -49,11 +50,11 @@ export function BrandMark({ className }: { className?: string }) {
         fontFamily="var(--font-display), Georgia, serif"
         fontSize="20"
         fontWeight="600"
-        fill="oklch(0.34 0.060 252)"
+        fill="oklch(0.96 0.012 78)"
       >
         R
       </text>
-      <circle cx="25.5" cy="6.5" r="1.6" fill="oklch(0.55 0.150 25)" />
+      <circle cx="25.5" cy="6.5" r="1.6" fill="oklch(0.78 0.105 230)" />
     </svg>
   );
 }
