@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Internal spec scratch — clean copies live in docs/
+/mirror-talk-remix-spec.md
+/Untitled document*.md

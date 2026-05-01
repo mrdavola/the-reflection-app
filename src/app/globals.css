@@ -1,26 +1,182 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-surface: hsl(var(--surface));
+  --color-surface-elevated: hsl(var(--surface-elevated));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  /* Triage palette — quick visual status for teacher dashboards */
+  --color-triage-sunny: hsl(var(--triage-sunny));
+  --color-triage-sunny-bg: hsl(var(--triage-sunny-bg));
+  --color-triage-orange: hsl(var(--triage-orange));
+  --color-triage-orange-bg: hsl(var(--triage-orange-bg));
+  --color-triage-blue: hsl(var(--triage-blue));
+  --color-triage-blue-bg: hsl(var(--triage-blue-bg));
+  --color-triage-rose: hsl(var(--triage-rose));
+  --color-triage-rose-bg: hsl(var(--triage-rose-bg));
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-fraunces), "Iowan Old Style", "Apple Garamond", Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.75rem;
+  --radius-2xl: 2.25rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --background: 36 45% 98%;
+  --foreground: 240 12% 12%;
+  --surface: 36 50% 97%;
+  --surface-elevated: 0 0% 100%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 12% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 12% 12%;
+
+  --primary: 261 60% 56%;            /* deep violet */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 220 80% 60%;          /* calm blue */
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 240 10% 95%;
+  --muted-foreground: 240 8% 42%;
+
+  --accent: 261 80% 96%;             /* soft lilac wash */
+  --accent-foreground: 261 60% 30%;
+
+  --destructive: 0 70% 55%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 240 12% 90%;
+  --input: 240 12% 92%;
+  --ring: 261 60% 56%;
+
+  --triage-sunny: 41 95% 38%;
+  --triage-sunny-bg: 48 100% 92%;
+  --triage-orange: 22 90% 45%;
+  --triage-orange-bg: 28 100% 93%;
+  --triage-blue: 220 70% 45%;
+  --triage-blue-bg: 220 90% 95%;
+  --triage-rose: 350 70% 45%;
+  --triage-rose-bg: 350 90% 96%;
+}
+
+.dark {
+  --background: 240 18% 7%;
+  --foreground: 0 0% 96%;
+  --surface: 240 18% 9%;
+  --surface-elevated: 240 16% 11%;
+  --card: 240 16% 11%;
+  --card-foreground: 0 0% 96%;
+  --popover: 240 16% 11%;
+  --popover-foreground: 0 0% 96%;
+
+  --primary: 261 75% 70%;
+  --primary-foreground: 240 18% 7%;
+
+  --secondary: 220 80% 70%;
+  --secondary-foreground: 240 18% 7%;
+
+  --muted: 240 12% 16%;
+  --muted-foreground: 240 8% 65%;
+
+  --accent: 261 30% 22%;
+  --accent-foreground: 261 80% 90%;
+
+  --destructive: 0 70% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 240 12% 20%;
+  --input: 240 12% 22%;
+  --ring: 261 75% 70%;
+
+  --triage-sunny: 41 95% 70%;
+  --triage-sunny-bg: 41 50% 18%;
+  --triage-orange: 22 90% 70%;
+  --triage-orange-bg: 22 50% 18%;
+  --triage-blue: 220 80% 75%;
+  --triage-blue-bg: 220 50% 18%;
+  --triage-rose: 350 80% 75%;
+  --triage-rose-bg: 350 40% 18%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html,
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 10% -10%, hsl(261 80% 92% / 0.55), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 110% 0%, hsl(220 90% 92% / 0.5), transparent 60%);
+  background-attachment: fixed;
+}
+
+.dark body {
+  background-image:
+    radial-gradient(ellipse 80% 60% at 10% -10%, hsl(261 50% 18% / 0.7), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 110% 0%, hsl(220 50% 18% / 0.6), transparent 60%);
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.012em;
+}
+
+@keyframes pulse-record {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--destructive) / 0.6); }
+  50% { box-shadow: 0 0 0 12px hsl(var(--destructive) / 0); }
+}
+.recording-pulse {
+  animation: pulse-record 1.4s ease-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--accent)) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 2.2s linear infinite;
+}
+
+::selection {
+  background: hsl(var(--primary) / 0.18);
+  color: hsl(var(--foreground));
 }
