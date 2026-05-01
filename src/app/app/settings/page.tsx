@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTheme } from "next-themes";
-import { Monitor, Moon, Sun, Trash2, UserRound } from "lucide-react";
+import { Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { store, useStore } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Dialog,
   DialogClose,
@@ -23,14 +21,8 @@ import {
 
 export default function SettingsPage() {
   const user = useStore((s) => s.user);
-  const { theme, setTheme } = useTheme();
   const [name, setName] = useState("");
-  const [mounted, setMounted] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (user) setName(user.name);
@@ -99,41 +91,6 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Theme</CardTitle>
-          <CardDescription>
-            Choose light, dark, or follow your system setting.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <RadioGroup
-            value={mounted ? theme ?? "system" : "system"}
-            onValueChange={(v) => setTheme(v)}
-            className="grid grid-cols-1 gap-2 sm:grid-cols-3"
-          >
-            <ThemeOption
-              value="light"
-              label="Light"
-              icon={<Sun className="h-4 w-4" />}
-              active={mounted && (theme ?? "system") === "light"}
-            />
-            <ThemeOption
-              value="dark"
-              label="Dark"
-              icon={<Moon className="h-4 w-4" />}
-              active={mounted && (theme ?? "system") === "dark"}
-            />
-            <ThemeOption
-              value="system"
-              label="System"
-              icon={<Monitor className="h-4 w-4" />}
-              active={!mounted || (theme ?? "system") === "system"}
-            />
-          </RadioGroup>
-        </CardContent>
-      </Card>
-
       <Card className="border-destructive/30">
         <CardHeader>
           <CardTitle className="text-destructive">Danger zone</CardTitle>
@@ -174,39 +131,5 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-function ThemeOption({
-  value,
-  label,
-  icon,
-  active,
-}: {
-  value: string;
-  label: string;
-  icon: React.ReactNode;
-  active: boolean;
-}) {
-  return (
-    <Label
-      htmlFor={`theme-${value}`}
-      className={
-        "group relative flex cursor-pointer items-center gap-3 rounded-2xl border bg-card px-4 py-3 shadow-sm transition-all hover:bg-muted/40 " +
-        (active
-          ? "border-primary bg-primary/[0.04] ring-2 ring-primary/30"
-          : "border-border")
-      }
-    >
-      <RadioGroupItem
-        value={value}
-        id={`theme-${value}`}
-        className="h-4 w-4"
-      />
-      <span className="grid h-9 w-9 place-items-center rounded-full bg-accent text-accent-foreground">
-        {icon}
-      </span>
-      <span className="text-sm font-medium">{label}</span>
-    </Label>
   );
 }

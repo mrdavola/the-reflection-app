@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { BookOpen, LayoutDashboard, LibraryBig, Presentation, Radio, Sparkles, TrendingUp } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { GroupSelector } from "@/components/group-selector";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -57,7 +56,6 @@ export function AppShell({ children }: Props) {
                 </Link>
               );
             })}
-            <ThemeToggle />
             <Button asChild size="sm" className="ml-2 hidden sm:inline-flex">
               <Link href="/app/personal">
                 <Sparkles className="h-4 w-4" />

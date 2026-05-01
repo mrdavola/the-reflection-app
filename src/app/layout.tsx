@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Petrona, Atkinson_Hyperlegible } from "next/font/google";
 import { Toaster } from "sonner";
-import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const atkinson = Atkinson_Hyperlegible({
@@ -34,24 +33,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={`${atkinson.variable} ${petrona.variable} h-full`}
-    >
-      <body className="min-h-full flex flex-col">
-        <ThemeProvider forcedTheme="light">
-          {children}
-          <Toaster
-            position="bottom-center"
-            toastOptions={{
-              classNames: {
-                toast:
-                  "rounded-md border border-border bg-card text-card-foreground shadow-md",
-              },
-            }}
-          />
-        </ThemeProvider>
+    <html lang="en" className={`${atkinson.variable} ${petrona.variable} h-full dark`}>
+      <body className="min-h-full flex flex-col bg-background text-foreground">
+        {children}
+        <Toaster
+          position="bottom-center"
+          toastOptions={{
+            classNames: {
+              toast:
+                "rounded-md border border-border bg-card text-card-foreground shadow-md",
+            },
+          }}
+        />
       </body>
     </html>
   );

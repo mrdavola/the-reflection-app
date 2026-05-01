@@ -2,75 +2,70 @@
 
 /* ---------------------------------------------------------------
    Refleckt — design tokens
-   Direction: "Marginalia" — paper, ink, restraint.
-   Light theme only. OKLCH for perceptually uniform colour.
+   Direction: "Deep Ocean" — navy ink, sky glow, restraint.
+   Dark theme only. OKLCH for perceptually uniform colour.
    --------------------------------------------------------------- */
 
 @theme inline {
-  /* Surfaces — warm ivory, never pure white. */
-  --color-background: oklch(0.985 0.008 82);
-  --color-surface: oklch(0.975 0.010 82);
-  --color-card: oklch(0.992 0.005 82);
-  --color-card-foreground: oklch(0.22 0.018 60);
-  --color-popover: oklch(0.992 0.005 82);
-  --color-popover-foreground: oklch(0.22 0.018 60);
+  /* Surfaces — three navies for hierarchy. Never pure black. */
+  --color-background: oklch(0.12 0.020 252);
+  --color-surface: oklch(0.16 0.022 250);
+  --color-card: oklch(0.19 0.024 248);
+  --color-card-foreground: oklch(0.96 0.012 78);
+  --color-popover: oklch(0.22 0.026 248);
+  --color-popover-foreground: oklch(0.96 0.012 78);
 
-  /* Ink — printed text, not pure black. */
-  --color-foreground: oklch(0.22 0.018 60);
-  --color-muted: oklch(0.94 0.010 82);
-  --color-muted-foreground: oklch(0.48 0.014 70);
+  /* Ink — warm cream, never pure white. */
+  --color-foreground: oklch(0.96 0.012 78);
+  --color-muted: oklch(0.20 0.022 250);
+  --color-muted-foreground: oklch(0.68 0.020 240);
+  --color-faint: oklch(0.45 0.024 245);
 
-  /* Primary — fountain-pen ink. Used sparingly. */
-  --color-primary: oklch(0.34 0.060 252);
-  --color-primary-foreground: oklch(0.985 0.008 82);
+  /* Primary — sky glow. */
+  --color-primary: oklch(0.78 0.105 230);
+  --color-primary-foreground: oklch(0.12 0.020 252);
 
-  /* Secondary — paper, with a hair of warmth. Reads as a quiet surface. */
-  --color-secondary: oklch(0.93 0.012 78);
-  --color-secondary-foreground: oklch(0.30 0.030 252);
+  /* Secondary — surface, with a hair of warmth. */
+  --color-secondary: oklch(0.22 0.026 248);
+  --color-secondary-foreground: oklch(0.96 0.012 78);
 
-  /* Accent — muted carmine. Reserved for marginalia emphasis. */
-  --color-accent: oklch(0.92 0.030 25);
-  --color-accent-foreground: oklch(0.40 0.130 25);
+  /* Accent — warmed carmine, marginalia emphasis. */
+  --color-accent: oklch(0.74 0.110 25);
+  --color-accent-foreground: oklch(0.12 0.020 252);
 
-  /* Destructive — same carmine, more saturated. */
-  --color-destructive: oklch(0.55 0.150 25);
-  --color-destructive-foreground: oklch(0.985 0.008 82);
+  /* Destructive — alert rose. */
+  --color-destructive: oklch(0.70 0.180 18);
+  --color-destructive-foreground: oklch(0.12 0.020 252);
 
   /* Edges. */
-  --color-border: oklch(0.88 0.010 78);
-  --color-input: oklch(0.92 0.010 78);
-  --color-ring: oklch(0.34 0.060 252);
+  --color-border: oklch(0.30 0.024 248);
+  --color-input: oklch(0.22 0.026 248);
+  --color-ring: oklch(0.78 0.105 230 / 0.35);
 
-  /* Triage palette — semantic status colours, retuned for the warm palette. */
-  --color-triage-sunny: oklch(0.55 0.130 75);
-  --color-triage-sunny-bg: oklch(0.96 0.045 88);
-  --color-triage-orange: oklch(0.55 0.150 45);
-  --color-triage-orange-bg: oklch(0.95 0.040 55);
-  --color-triage-blue: oklch(0.42 0.090 245);
-  --color-triage-blue-bg: oklch(0.94 0.025 240);
-  --color-triage-rose: oklch(0.50 0.150 20);
-  --color-triage-rose-bg: oklch(0.95 0.035 20);
+  /* Triage palette — retuned for dark. */
+  --color-triage-sunny: oklch(0.82 0.130 88);
+  --color-triage-sunny-bg: oklch(0.30 0.060 88 / 0.20);
+  --color-triage-orange: oklch(0.74 0.150 45);
+  --color-triage-orange-bg: oklch(0.30 0.080 45 / 0.20);
+  --color-triage-blue: oklch(0.75 0.110 235);
+  --color-triage-blue-bg: oklch(0.30 0.060 235 / 0.20);
+  --color-triage-rose: oklch(0.70 0.180 18);
+  --color-triage-rose-bg: oklch(0.32 0.090 18 / 0.25);
 
   /* Type. */
   --font-sans: var(--font-body), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: var(--font-display), "Iowan Old Style", "Apple Garamond", Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
 
-  /* Spacing — 4pt scale. Use semantic tokens, not pixel-named. */
   --spacing-hairline: 1px;
   --spacing-rule: 0.0625rem;
 
-  /* Radius — restrained. Paper folds, not jellybeans. */
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
   --radius-2xl: 1rem;
 }
-
-/* ---------------------------------------------------------------
-   Base — paper-like surface, ink type.
-   --------------------------------------------------------------- */
 
 html,
 body {
@@ -87,31 +82,21 @@ body {
   letter-spacing: -0.018em;
 }
 
-/* Tighten Atkinson body type at small sizes for UI rhythm. */
 body {
   font-size: 16px;
   line-height: 1.55;
   letter-spacing: -0.005em;
 }
 
-/* Cap reading measure — body copy should not exceed a comfortable line. */
 .prose-measure {
   max-width: 68ch;
 }
 
-/* ---------------------------------------------------------------
-   Marginalia — emphasis as a teacher's underline.
-   Use sparingly: <em class="marginalia">one phrase per paragraph</em>.
-   --------------------------------------------------------------- */
-
+/* Marginalia — emphasis as the teacher's underline. Sky on dark. */
 .marginalia {
   position: relative;
   font-style: normal;
-  background-image: linear-gradient(
-    to right,
-    var(--color-accent-foreground) 0%,
-    var(--color-accent-foreground) 100%
-  );
+  background-image: linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) 100%);
   background-repeat: no-repeat;
   background-size: 100% 0.12em;
   background-position: 0 92%;
@@ -119,14 +104,10 @@ body {
 }
 
 .marginalia--ink {
-  background-image: linear-gradient(
-    to right,
-    var(--color-primary) 0%,
-    var(--color-primary) 100%
-  );
+  background-image: linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) 100%);
 }
 
-/* Pencil-stroke divider — like a ruled line in a composition book. */
+/* Pencil-stroke divider — soft sky-tinted hairline on dark. */
 .rule-soft {
   border: 0;
   height: 1px;
@@ -139,23 +120,19 @@ body {
   );
 }
 
-/* Margin caption — used for editorial annotations next to body copy. */
+/* Margin caption — uppercase italic Petrona. Whisper. */
 .margin-note {
   font-family: var(--font-display);
-  font-variation-settings: "opsz" 14;
   font-style: italic;
   font-size: 0.875rem;
   line-height: 1.45;
-  color: var(--color-muted-foreground);
+  color: var(--color-faint);
 }
 
-/* ---------------------------------------------------------------
-   Microinteractions — restrained.
-   --------------------------------------------------------------- */
-
+/* Recording pulse — refit for dark, sky glow not carmine. */
 @keyframes pulse-record {
-  0%, 100% { box-shadow: 0 0 0 0 oklch(0.55 0.150 25 / 0.5); }
-  50%      { box-shadow: 0 0 0 10px oklch(0.55 0.150 25 / 0); }
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.78 0.105 230 / 0.5); }
+  50%      { box-shadow: 0 0 0 10px oklch(0.78 0.105 230 / 0); }
 }
 .recording-pulse {
   animation: pulse-record 1.6s ease-out infinite;
@@ -176,23 +153,94 @@ body {
   animation: shimmer 2.4s linear infinite;
 }
 
+/* ---------------------------------------------------------------
+   Deep Ocean ambient animations — used by ambient components.
+   --------------------------------------------------------------- */
+
+@keyframes calm-ocean-ripple {
+  0%   { width: 4px; height: 4px; opacity: 0; }
+  10%  { opacity: 0.8; }
+  100% { width: 1200px; height: 1200px; opacity: 0; }
+}
+.animate-calm-ripple {
+  animation: calm-ocean-ripple 12s cubic-bezier(0.2, 0.5, 0.4, 1) infinite;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid oklch(0.78 0.105 230 / 0.5);
+  pointer-events: none;
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(0.5); opacity: 0.2; border-width: 1px; }
+  50%      { transform: scale(1.5); opacity: 0.8; border-width: 2px; }
+}
+.animate-breathe {
+  animation: breathe 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; }
+}
+.animate-pulse-slow {
+  animation: pulse-slow 5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes blob {
+  0%   { transform: translate(0px, 0px) scale(1); }
+  33%  { transform: translate(30px, -50px) scale(1.1); }
+  66%  { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+.animate-blob {
+  animation: blob 20s infinite alternate;
+}
+.animation-delay-4000 { animation-delay: 4s; }
+
+@keyframes fade-in {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fade-in 1.5s ease-out forwards;
+}
+
+@keyframes fade-in-up {
+  0%   { opacity: 0; transform: translateY(15px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-spin-slow {
+  animation: spin 8s linear infinite;
+}
+
 ::selection {
-  background: oklch(0.34 0.060 252 / 0.18);
+  background: oklch(0.78 0.105 230 / 0.25);
   color: var(--color-foreground);
 }
 
-/* Reset default border colour to the new ink-tinted border token. */
 * {
   border-color: var(--color-border);
 }
 
-/* Respect reduced-motion preferences. */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Print — stays light intentionally. Paper is paper. */
+@media print {
+  html, body {
+    background: white !important;
+    color: black !important;
   }
 }
