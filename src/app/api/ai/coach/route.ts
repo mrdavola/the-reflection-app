@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { MODELS, HAS_GATEWAY } from "@/lib/ai/models";
+import { getModel, HAS_AI } from "@/lib/ai/models";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
   const { transcript, recentSuggestions, gradeBand, subject } = parsed.data;
   const trimmed = transcript.trim();
 
-  if (!HAS_GATEWAY) {
+  if (!HAS_AI) {
     return NextResponse.json({ suggestions: pickMock(trimmed), source: "mock" });
   }
 
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
   try {
     const userPrompt = buildPrompt({ transcript: trimmed, recentSuggestions, gradeBand, subject });
     const { object } = await generateObject({
-      model: MODELS.fast,
+      model: getModel("fast"),
       schema: CoachOutput,
       system: COACH_SYSTEM_PROMPT,
       prompt: userPrompt,

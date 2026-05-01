@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateText } from "ai";
 import { z } from "zod";
-import { MODELS, HAS_GATEWAY } from "@/lib/ai/models";
+import { getModel, HAS_AI } from "@/lib/ai/models";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -23,14 +23,14 @@ export async function POST(req: Request) {
   const { kind, transcript, targetLanguage } = parsed.data;
   const trimmed = transcript.trim();
 
-  if (!HAS_GATEWAY) {
+  if (!HAS_AI) {
     return NextResponse.json({ text: mockResult(kind, trimmed, targetLanguage), source: "mock" });
   }
 
   try {
     const { system, prompt } = buildToolPrompt(kind, trimmed, targetLanguage);
     const { text } = await generateText({
-      model: MODELS.fast,
+      model: getModel("fast"),
       system,
       prompt,
     });

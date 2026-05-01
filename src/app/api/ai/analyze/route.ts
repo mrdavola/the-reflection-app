@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { MODELS, HAS_GATEWAY } from "@/lib/ai/models";
+import { getModel, HAS_AI } from "@/lib/ai/models";
 import { AnalysisSchema } from "@/lib/ai/schemas";
 import { mockAnalysis } from "@/lib/ai/mock";
 import { scanForAlerts } from "@/lib/ai/safety";
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
   const fullText = input.responses.map((r) => r.text).join(" ");
   const localAlerts = scanForAlerts(fullText);
 
-  if (!HAS_GATEWAY) {
+  if (!HAS_AI) {
     const analysis = mockAnalysis({
       objective: input.objective,
       responses: input.responses,
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
 
   try {
     const { object } = await generateObject({
-      model: MODELS.smart,
+      model: getModel("smart"),
       schema: AnalysisSchema,
       system: buildAnalyzeSystemPrompt(input.language),
       prompt: buildAnalyzeInstruction(input),

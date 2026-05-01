@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { MODELS, HAS_GATEWAY } from "@/lib/ai/models";
+import { getModel, HAS_AI } from "@/lib/ai/models";
 import { PromptListSchema } from "@/lib/ai/schemas";
 import { mockPrompts } from "@/lib/ai/mock";
 
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   }
   const input = parsed.data;
 
-  if (!HAS_GATEWAY) {
+  if (!HAS_AI) {
     return NextResponse.json({
       prompts: mockPrompts({
         objective: input.objective,
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
 
   try {
     const { object } = await generateObject({
-      model: MODELS.fast,
+      model: getModel("fast"),
       schema: PromptListSchema,
       system: buildSystemPrompt(input.language),
       prompt: buildPromptInstruction(input),

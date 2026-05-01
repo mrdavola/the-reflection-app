@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { MODELS, HAS_GATEWAY } from "@/lib/ai/models";
+import { getModel, HAS_AI } from "@/lib/ai/models";
 import { GroupSummarySchema } from "@/lib/ai/schemas";
 import { mockGroupSummary } from "@/lib/ai/mock";
 
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   }
   const input = parsed.data;
 
-  if (!HAS_GATEWAY) {
+  if (!HAS_AI) {
     return NextResponse.json({
       summary: mockGroupSummary({
         groupName: input.groupName,
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
 
   try {
     const { object } = await generateObject({
-      model: MODELS.smart,
+      model: getModel("smart"),
       schema: GroupSummarySchema,
       system: buildSystemPrompt(input.language),
       prompt: buildPrompt(input),
