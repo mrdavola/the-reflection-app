@@ -2,17 +2,24 @@
 
 /**
  * Voice persona settings — the master TTS toggle plus four voice-card preview
- * grid. Source of truth for `localStorage[refleckt:personal:tts-enabled]` and
- * `localStorage[refleckt:personal:voice]`. Cross-agent contract: the personal
- * reflection setup page reads the same keys to honor the toggle in-flow. Do
- * not rename the keys without updating both consumers in lockstep.
+ * grid. Reads/writes through `@/lib/voice-persona-prefs`, which is the single
+ * source of truth for both the on/off pref and the chosen voice. The personal
+ * reflection setup page and run page consume the same helpers, so the contract
+ * cannot drift.
  */
 
 import { useEffect, useState } from "react";
 import { Loader2, Play } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { useTTS, type VoicePersona } from "@/lib/use-tts";
+import { useTTS } from "@/lib/use-tts";
+import {
+  readTtsEnabled,
+  readVoicePref,
+  writeTtsEnabled,
+  writeVoicePref,
+  type VoicePersona,
+} from "@/lib/voice-persona-prefs";
 
 const VOICES: Array<{ id: VoicePersona; name: string; desc: string }> = [
   { id: "Aoede", name: "Aoede", desc: "Warm & calming" },
@@ -21,11 +28,6 @@ const VOICES: Array<{ id: VoicePersona; name: string; desc: string }> = [
   { id: "Kore", name: "Kore", desc: "Balanced & gentle" },
 ];
 
-const STORAGE_TTS = "refleckt:personal:tts-enabled";
-const STORAGE_VOICE = "refleckt:personal:voice";
-
-const VOICE_IDS: VoicePersona[] = ["Aoede", "Puck", "Charon", "Kore"];
-
 export function VoicePersonaSettings() {
   const [ttsEnabled, setTtsEnabled] = useState(false);
   const [voice, setVoice] = useState<VoicePersona>("Aoede");
@@ -33,33 +35,18 @@ export function VoicePersonaSettings() {
   const tts = useTTS({ voice, muted: false });
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const t = window.localStorage.getItem(STORAGE_TTS);
-      const v = window.localStorage.getItem(STORAGE_VOICE) as VoicePersona | null;
-      if (t === "1") setTtsEnabled(true);
-      if (v && (VOICE_IDS as string[]).includes(v)) setVoice(v);
-    } catch {
-      // ignore
-    }
+    setTtsEnabled(readTtsEnabled());
+    setVoice(readVoicePref());
   }, []);
 
   function handleToggle(next: boolean) {
     setTtsEnabled(next);
-    try {
-      window.localStorage.setItem(STORAGE_TTS, next ? "1" : "0");
-    } catch {
-      // ignore
-    }
+    writeTtsEnabled(next);
   }
 
   function handleVoice(id: VoicePersona) {
     setVoice(id);
-    try {
-      window.localStorage.setItem(STORAGE_VOICE, id);
-    } catch {
-      // ignore
-    }
+    writeVoicePref(id);
   }
 
   async function handlePreview(id: VoicePersona) {

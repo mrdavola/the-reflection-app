@@ -21,11 +21,10 @@ import { Label } from "@/components/ui/label";
 import { RippleField } from "@/components/ambient";
 import { FOCUS_OPTIONS, getFocus } from "@/lib/focus-catalog";
 import { personalFlow, usePersonalFlow } from "@/lib/personal-flow-store";
+import { readTtsEnabled, writeTtsEnabled } from "@/lib/voice-persona-prefs";
 import type { FocusId } from "@/lib/types";
 
 const FEATURED_FOCI: FocusId[] = ["metacognition", "growth-mindset", "self-authorship"];
-
-const TTS_PREF_KEY = "refleckt:personal:tts-enabled";
 
 export default function PersonalEntryPage() {
   const router = useRouter();
@@ -39,13 +38,7 @@ export default function PersonalEntryPage() {
   useEffect(() => {
     if (flow.focus) setFocus(flow.focus);
     if (flow.objective) setObjective(flow.objective);
-    if (typeof window !== "undefined") {
-      try {
-        setTtsEnabled(window.localStorage.getItem(TTS_PREF_KEY) === "1");
-      } catch {
-        // ignore
-      }
-    }
+    setTtsEnabled(readTtsEnabled());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -60,11 +53,7 @@ export default function PersonalEntryPage() {
   function toggleTts() {
     const next = !ttsEnabled;
     setTtsEnabled(next);
-    try {
-      window.localStorage.setItem(TTS_PREF_KEY, next ? "1" : "0");
-    } catch {
-      // ignore
-    }
+    writeTtsEnabled(next);
   }
 
   function begin() {

@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { VoicePersona } from "./voice-persona-prefs";
 
-export type VoicePersona = "Aoede" | "Puck" | "Charon" | "Kore";
+// Re-exported here for backwards compatibility with existing consumers.
+export type { VoicePersona };
 
 interface UseTTSOptions {
   voice?: VoicePersona;

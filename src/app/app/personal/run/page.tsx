@@ -27,6 +27,11 @@ import {
 } from "@/components/reflection";
 import { useReflectionFlow, type ReflectionInsight } from "@/lib/use-reflection-flow";
 import { useTTS } from "@/lib/use-tts";
+import {
+  readTtsEnabled,
+  readVoicePref,
+  type VoicePersona,
+} from "@/lib/voice-persona-prefs";
 import { personalFlow, usePersonalFlow } from "@/lib/personal-flow-store";
 import { store, useStore } from "@/lib/storage";
 import { getFocus } from "@/lib/focus-catalog";
@@ -36,8 +41,6 @@ import type {
   ReflectionAnalysis,
 } from "@/lib/types";
 
-const TTS_PREF_KEY = "refleckt:personal:tts-enabled";
-
 export default function PersonalRunPage() {
   const router = useRouter();
   const flow = usePersonalFlow();
@@ -45,19 +48,18 @@ export default function PersonalRunPage() {
 
   const [savedReflectionId, setSavedReflectionId] = useState<string | null>(null);
   const [ttsEnabled, setTtsEnabled] = useState(false);
+  const [voice, setVoice] = useState<VoicePersona>("Aoede");
 
   useEffect(() => {
     if (!user) store.ensureUser();
   }, [user]);
 
-  // Read the user's voice TTS preference (defaults OFF).
+  // Read both the TTS-enabled toggle and the chosen voice from settings.
+  // Both default to off / "Aoede" so first-run users still hear something
+  // sensible if they enable TTS later.
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      setTtsEnabled(window.localStorage.getItem(TTS_PREF_KEY) === "1");
-    } catch {
-      // ignore
-    }
+    setTtsEnabled(readTtsEnabled());
+    setVoice(readVoicePref());
   }, []);
 
   // Guard: bounce back to setup if the store is empty.
@@ -120,7 +122,7 @@ export default function PersonalRunPage() {
   });
 
   const { speak: speakTts, isLoading: ttsLoading, isPlaying: ttsPlaying, stop: stopTts } =
-    useTTS({ voice: "Aoede", muted: !ttsEnabled });
+    useTTS({ voice, muted: !ttsEnabled });
 
   const focusMeta = useMemo(() => (flow.focus ? getFocus(flow.focus) : null), [flow.focus]);
 
