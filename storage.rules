@@ -1,0 +1,35 @@
+rules_version = '2';
+
+// Cloud Storage security rules for The Reflection App.
+//
+// Audio reflections live under `audio/`. Anyone can read (so shared share-code
+// pages and educators on different sessions can play back blobs), but only
+// signed-in educators can write to their own subpath. Tighten later if you
+// need stricter controls (e.g. signed URLs only).
+//
+// Deploy with: firebase deploy --only storage
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Educators write to their own folder under audio/{uid}/...
+    // Anyone can read so audio playback works in shared / no-login contexts.
+    match /audio/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Catch-all for anything else under audio/ (e.g. anonymous uploads from
+    // share-code submissions). Read is open; write is allowed but capped to
+    // 25 MB and audio mime types so the bucket can't be abused.
+    match /audio/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.resource.size < 25 * 1024 * 1024
+        && request.resource.contentType.matches("audio/.*");
+    }
+  }
+}

@@ -54,7 +54,9 @@ If you'd rather buy from Namecheap / Cloudflare / Google Domains, see [PUBLISH.m
 
 ### Step 2 — Get a real AI key (5 min, recommended)
 
-Without this, every AI route returns a heuristic mock response. With it, you get real Claude prompts/feedback/analysis and Whisper transcription.
+Without this, every AI route returns a heuristic mock response. With it, you get real Gemini 2.5 prompts/feedback/analysis and Whisper transcription.
+
+> The app is wired to **Gemini 2.5 Flash + Pro** through Vercel AI Gateway by default. If you'd rather use Claude, OpenAI, Llama, etc., just edit the model strings in [`src/lib/ai/models.ts`](src/lib/ai/models.ts) — same gateway key works for all of them.
 
 1. Open https://vercel.com/dashboard/ai-gateway
 2. Click **Create API Key** → name it `the-reflection-app-prod` → copy the `vgw_…` value
@@ -77,52 +79,53 @@ curl -sS -X POST -H "content-type: application/json" \
 
 ---
 
-### Step 3 — Add Supabase persistence (15 min, optional)
+### Step 3 — Add Firebase persistence (15 min, optional)
 
 Without this, all data is browser-local. With it, data survives across devices and is ready for real auth.
 
-1. Create a Supabase project at https://supabase.com/dashboard (free tier is fine to start)
-2. **SQL Editor** → paste the entire contents of [`supabase/schema.sql`](supabase/schema.sql) → **Run**
-3. **Settings → API** → copy the **Project URL** and **anon public key**
-4. Install SDKs and add env vars:
+1. Create a Firebase project at https://console.firebase.google.com (free Spark tier is fine to start)
+2. Enable **Authentication** (Email/Password + Google), **Firestore Database** (production mode), and **Cloud Storage** (production mode)
+3. **Project settings → General → Your apps → Web (`</>`)** → copy the `firebaseConfig` values
+4. Install the SDK and push the six env vars to Vercel:
 
 ```bash
 cd /Users/md/Refleckt
-npm i @supabase/ssr @supabase/supabase-js
+npm i firebase
 
-vercel env add NEXT_PUBLIC_SUPABASE_URL production           # paste project URL
-vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY production      # paste anon key
-vercel env add NEXT_PUBLIC_SUPABASE_URL preview
-vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY preview
+# repeat for each var, paste the value from firebaseConfig when prompted
+vercel env add NEXT_PUBLIC_FIREBASE_API_KEY production
+vercel env add NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN production
+vercel env add NEXT_PUBLIC_FIREBASE_PROJECT_ID production
+vercel env add NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET production
+vercel env add NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID production
+vercel env add NEXT_PUBLIC_FIREBASE_APP_ID production
+# then repeat the six commands with `preview` instead of `production`
 
 git add package.json package-lock.json
-git commit -m "Install Supabase SDKs"
+git commit -m "Install Firebase SDK"
 git push                                                      # auto-deploys
 ```
 
-5. Wire the storage layer to use Supabase when configured. See [`docs/supabase-setup.md`](docs/supabase-setup.md) for the copy-paste edit to `src/lib/storage.ts`.
+5. Deploy security rules (one-time):
+
+```bash
+npm i -g firebase-tools
+firebase login
+firebase use --add                                            # pick your project
+firebase deploy --only firestore:rules,storage
+```
+
+6. Flip the storage layer to use Firebase when configured. See [`docs/firebase-setup.md`](docs/firebase-setup.md) for the copy-paste edit to `src/lib/storage.ts`.
 
 ---
 
-### Step 4 — Email alerts via Resend (5 min, optional)
+### Step 4 — Email alerts (skip for now)
 
-Sends an email to the educator when a student writes something the safety scanner flags as severe (suicide, self-harm, etc.). Without this, alerts only show on the dashboard.
+Severe content alerts (suicide / self-harm mentions) already surface in the educator dashboard with a rose-colored badge — that's the primary surface. Email is a "nice to have" notification on top.
 
-1. Sign up at https://resend.com
-2. **Domains → Add domain** → `thereflectionapp.com` → add the TXT/DKIM records to your registrar (or to Vercel DNS if you bought through Vercel)
-3. Wait for verification (5–30 min)
-4. **API Keys → Create API Key** → name it `the-reflection-app-prod` → copy the `re_…` value
-5. Add to Vercel:
+The code path is wired but harmlessly dormant: without `RESEND_API_KEY` set, the alert helper just logs to the server console. Skip it. Revisit if dashboard alerts aren't enough.
 
-```bash
-cd /Users/md/Refleckt
-vercel env add RESEND_API_KEY production               # paste re_… key
-vercel env add ALERTS_FROM_EMAIL production            # enter alerts@thereflectionapp.com
-vercel env add RESEND_API_KEY preview
-vercel env add ALERTS_FROM_EMAIL preview
-```
-
-6. Wire the alerts into the analyze route. See [PUBLISH.md § Phase 6.4](PUBLISH.md#64--wire-alerts-in-the-analyze-route) for the exact 10-line patch.
+When you're ready, see [PUBLISH.md § Phase 6](PUBLISH.md#phase-6--email-alerts-via-resend-optional) for the Resend setup, or wire any SMTP provider via Nodemailer instead.
 
 ---
 

@@ -14,7 +14,7 @@ is a clean stop point.
 | 2. Deploy to Vercel | A live URL like `the-reflection-app.vercel.app` | 5 min | yes |
 | 3. Add your domain | Live at `thereflectionapp.com` | 10 min + DNS wait | recommended |
 | 4. Real AI | Claude / Whisper instead of mock fallbacks | 5 min | recommended |
-| 5. Persistence | Supabase: data survives across devices | 15 min | optional |
+| 5. Persistence | Firebase: data survives across devices | 15 min | optional |
 | 6. Email alerts | Real emails when a student writes something serious | 5 min | optional |
 
 You can stop after Phase 2 and have a working public site. The remaining phases
@@ -191,8 +191,13 @@ cd /Users/md/Refleckt
 ## Phase 4 — Real AI (recommended)
 
 Without this, the app uses heuristic fallbacks (still works, but the AI nudges
-are pre-canned). This phase gives you actual Claude prompts/feedback/analysis
+are pre-canned). This phase gives you real Gemini 2.5 prompts/feedback/analysis
 plus Whisper transcription.
+
+> **Which provider?** The app is wired to **Gemini 2.5 Flash + Pro** through
+> Vercel AI Gateway. To switch to Claude, OpenAI, Llama, etc., just change the
+> two `provider/model` strings in [`src/lib/ai/models.ts`](src/lib/ai/models.ts).
+> One Gateway key works for all of them.
 
 ### 4.1 — Get a Vercel AI Gateway API key
 
@@ -218,8 +223,37 @@ vercel --prod
 
 Now `/api/ai/prompts`, `/api/ai/analyze`, `/api/ai/group-summary`,
 `/api/ai/transcribe`, `/api/ai/coach`, and `/api/ai/lesson-tools` all hit real
-Claude / Whisper. The `source` field in the response goes from `"mock"` to
+Gemini / Whisper. The `source` field in the response goes from `"mock"` to
 `"ai"`.
+
+### 4.5 — Alternative: direct Google AI Studio key (no Vercel Gateway)
+
+If you already have a Gemini API key from https://aistudio.google.com/apikey
+and want to skip the Gateway:
+
+```bash
+cd /Users/md/Refleckt
+npm i @ai-sdk/google
+```
+
+In each AI route (`src/app/api/ai/*/route.ts`), replace:
+
+```ts
+import { MODELS } from "@/lib/ai/models";
+// ...
+const { object } = await generateObject({ model: MODELS.fast, ... });
+```
+
+with:
+
+```ts
+import { google } from "@ai-sdk/google";
+// ...
+const { object } = await generateObject({ model: google("gemini-2.5-flash"), ... });
+```
+
+Then set `GOOGLE_GENERATIVE_AI_API_KEY` in Vercel instead of `AI_GATEWAY_API_KEY`.
+The Gateway path (4.1–4.3) is simpler unless you have a strong reason to skip it.
 
 ### 4.4 — (Optional) Test it locally with the same key
 
@@ -233,60 +267,76 @@ npm run dev
 
 ---
 
-## Phase 5 — Real persistence with Supabase (optional)
+## Phase 5 — Real persistence with Firebase (optional)
 
 Today the app stores data in your browser. If you want data to survive across
 devices and lay groundwork for real auth, do this.
 
-### 5.1 — Create a Supabase project
+### 5.1 — Create a Firebase project
 
-1. Go to https://supabase.com/dashboard
-2. **New project** → name it `the-reflection-app`, pick a region close to your
-   users, set a strong DB password (save it somewhere)
-3. Wait ~2 minutes for it to provision
+1. Go to https://console.firebase.google.com → **Add project**
+2. Name it `the-reflection-app`, accept (or skip) analytics
+3. Wait ~30 seconds for it to provision
 
-### 5.2 — Run the schema
+### 5.2 — Enable Auth, Firestore, and Storage
 
-1. In your Supabase project, open **SQL Editor**
-2. Open `/Users/md/Refleckt/supabase/schema.sql` locally and copy-paste the
-   whole file in
-3. Click **Run**. You should see "Success. No rows returned."
+In the Firebase console for your new project:
 
-### 5.3 — Get your project URL + anon key
+1. **Build → Authentication → Get started** → enable **Email/Password** and
+   **Google** sign-in
+2. **Build → Firestore Database → Create database** → **Production mode** →
+   pick a region close to your users
+3. **Build → Storage → Get started** → **Production mode** → same region
 
-In Supabase: **Settings → API**. Copy:
-- **Project URL** (looks like `https://abcdefg.supabase.co`)
-- **anon / public key** (long `eyJ…` string)
+### 5.3 — Get your web app config
 
-### 5.4 — Install the SDKs and add env vars
+1. **Project settings (gear icon) → General → Your apps → Add app → Web (`</>`)**
+2. Register the app (no Firebase Hosting needed — Vercel handles hosting)
+3. Copy the `firebaseConfig` values that appear
+
+### 5.4 — Install the SDK and add env vars
 
 ```bash
 cd /Users/md/Refleckt
-npm i @supabase/ssr @supabase/supabase-js
+npm i firebase
 
-vercel env add NEXT_PUBLIC_SUPABASE_URL production
-# paste the project URL
-vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY production
-# paste the anon key
-# repeat both for "preview"
-vercel env add NEXT_PUBLIC_SUPABASE_URL preview
-vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY preview
+# paste the matching firebaseConfig value when prompted
+vercel env add NEXT_PUBLIC_FIREBASE_API_KEY production
+vercel env add NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN production
+vercel env add NEXT_PUBLIC_FIREBASE_PROJECT_ID production
+vercel env add NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET production
+vercel env add NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID production
+vercel env add NEXT_PUBLIC_FIREBASE_APP_ID production
+
+# repeat all six with `preview` instead of `production`
 ```
 
-### 5.5 — Flip the storage layer
+### 5.5 — Deploy security rules
 
-The Supabase wrappers are already written at `src/lib/supabase/queries.ts`.
+```bash
+npm i -g firebase-tools
+firebase login
+firebase use --add                                # pick your new project
+firebase deploy --only firestore:rules,storage
+```
+
+The rules in `firestore.rules` and `storage.rules` are already wired for
+educator-owned data plus the no-login student share-code path.
+
+### 5.6 — Flip the storage layer
+
+The Firebase wrappers are already written at `src/lib/firebase/queries.ts`.
 They mirror `store.xxx()` exactly. To switch over, edit `src/lib/storage.ts`:
-inside each mutation, check `isSupabaseConfigured()` and delegate to the
-Supabase wrapper when true. (See `docs/supabase-setup.md` for a copy-paste
+inside each mutation, check `isFirebaseConfigured()` and delegate to the
+Firebase wrapper when true. (See `docs/firebase-setup.md` for a copy-paste
 example.)
 
-### 5.6 — Commit and push
+### 5.7 — Commit and push
 
 ```bash
 cd /Users/md/Refleckt
 git add -A
-git commit -m "Wire Supabase persistence"
+git commit -m "Wire Firebase persistence"
 git push
 ```
 
@@ -345,8 +395,8 @@ if (severe.length > 0) {
 }
 ```
 
-When you wire Supabase auth (Phase 5 follow-up), pull `educatorEmail` from the
-group's owner row instead of hardcoding it.
+When you wire Firebase auth (Phase 5 follow-up), pull `educatorEmail` from the
+group's owner doc instead of hardcoding it.
 
 ### 6.5 — Commit and push
 
@@ -403,9 +453,9 @@ In production, check:
 
 ## Troubleshooting
 
-**Vercel build fails with "Cannot find module @supabase/ssr"**
-You added Supabase env vars without `npm install`. Run `npm i @supabase/ssr
-@supabase/supabase-js`, commit `package.json` + `package-lock.json`, push.
+**Vercel build fails with "Cannot find module 'firebase/app'"**
+You added Firebase env vars without `npm install`. Run `npm i firebase`,
+commit `package.json` + `package-lock.json`, push.
 
 **Microphone doesn't work in production**
 Browsers require HTTPS for getUserMedia. Vercel gives you HTTPS automatically,

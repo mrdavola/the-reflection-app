@@ -1,12 +1,13 @@
-// Centralised model selection. We use Vercel AI Gateway "provider/model" strings
-// so we don't lock into a single provider — flip these per call site as needed.
+// Centralised model selection. We route through Vercel AI Gateway using
+// "provider/model" strings so we can flip providers per call site without
+// installing provider-specific SDKs.
 
 export const MODELS = {
-  /** Fast, low-cost — for prompt generation. */
-  fast: "anthropic/claude-haiku-4-5",
-  /** Higher quality — for feedback + analysis. */
-  smart: "anthropic/claude-sonnet-4-6",
-  /** Whisper-style transcription. */
+  /** Fast, low-cost — for prompt generation, coaching nudges, lesson tools. */
+  fast: "google/gemini-2.5-flash",
+  /** Higher quality — for full reflection feedback + analysis + class summaries. */
+  smart: "google/gemini-2.5-pro",
+  /** Audio transcription — Whisper is purpose-built and stays. */
   transcribe: "openai/whisper-1",
 } as const;
 
