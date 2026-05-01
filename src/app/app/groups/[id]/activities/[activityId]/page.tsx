@@ -15,7 +15,7 @@ import {
 import { TriageRow, type TriageRowData } from "@/components/dashboard";
 import { getFocus } from "@/lib/focus-catalog";
 import { useStore } from "@/lib/storage";
-import type { Reflection, ScoreColor } from "@/lib/types";
+import { buildRowData } from "@/lib/triage";
 import { formatRelativeTime } from "@/lib/utils";
 
 const SEEN_KEY = (activityId: string) =>
@@ -223,34 +223,6 @@ export default function ActivityDetailPage() {
       </section>
     </div>
   );
-}
-
-function buildRowData(reflection: Reflection): TriageRowData {
-  const a = reflection.analysis;
-  const color: ScoreColor = a?.scoreColor ?? "blue";
-  const level = a?.reflectionLevel ?? 1;
-  const quote = pickQuote(reflection);
-  const teacherMove = a?.teacherFollowUp ?? a?.suggestedNextStep ?? "";
-  const hasSafetyAlert = (a?.contentAlerts ?? []).some(
-    (alert) => alert.severity === "high",
-  );
-  return { reflection, color, level, quote, teacherMove, hasSafetyAlert };
-}
-
-function pickQuote(r: Reflection): string {
-  const fromAnalysis = r.analysis?.studentQuotes?.[0];
-  if (fromAnalysis && fromAnalysis.trim()) return cleanQuote(fromAnalysis);
-  const fromResponse = r.responses[0]?.text;
-  if (fromResponse && fromResponse.trim()) {
-    const clean = fromResponse.trim();
-    return clean.length > 160 ? `${clean.slice(0, 157)}…` : clean;
-  }
-  return "";
-}
-
-function cleanQuote(q: string): string {
-  const trimmed = q.replace(/^["“”']|["“”']$/g, "").trim();
-  return trimmed.length > 160 ? `${trimmed.slice(0, 157)}…` : trimmed;
 }
 
 function loadSeen(activityId: string): Set<string> {

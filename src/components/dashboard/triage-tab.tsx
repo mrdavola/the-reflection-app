@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/storage";
+import { buildRowData } from "@/lib/triage";
 import type { Group, Reflection, ScoreColor } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { TriageRow, type TriageRowData } from "./triage-row";
@@ -367,39 +368,6 @@ function EmptyFilterState({ onReset }: { onReset: () => void }) {
 }
 
 // ---------- helpers ----------
-
-function buildRowData(reflection: Reflection): TriageRowData {
-  const a = reflection.analysis;
-  const color: ScoreColor = a?.scoreColor ?? "blue";
-  const level = a?.reflectionLevel ?? 1;
-  const quote = pickQuote(reflection);
-  const teacherMove = pickMove(reflection);
-  const hasSafetyAlert =
-    (a?.contentAlerts ?? []).some((alert) => alert.severity === "high") ?? false;
-  return { reflection, color, level, quote, teacherMove, hasSafetyAlert };
-}
-
-function pickQuote(r: Reflection): string {
-  const fromAnalysis = r.analysis?.studentQuotes?.[0];
-  if (fromAnalysis && fromAnalysis.trim()) return cleanQuote(fromAnalysis);
-  const fromResponse = r.responses[0]?.text;
-  if (fromResponse && fromResponse.trim()) {
-    const clean = fromResponse.trim();
-    return clean.length > 160 ? `${clean.slice(0, 157)}…` : clean;
-  }
-  return "";
-}
-
-function cleanQuote(q: string): string {
-  const trimmed = q.replace(/^["“”']|["“”']$/g, "").trim();
-  return trimmed.length > 160 ? `${trimmed.slice(0, 157)}…` : trimmed;
-}
-
-function pickMove(r: Reflection): string {
-  if (r.analysis?.teacherFollowUp) return r.analysis.teacherFollowUp;
-  if (r.analysis?.suggestedNextStep) return r.analysis.suggestedNextStep;
-  return "";
-}
 
 function initials(name: string): string {
   return name

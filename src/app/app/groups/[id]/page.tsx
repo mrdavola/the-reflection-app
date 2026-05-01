@@ -46,11 +46,11 @@ import { getGradeBand } from "@/lib/grade-bands";
 import { ACCESS_TYPES } from "@/lib/access-types";
 import { getFocus } from "@/lib/focus-catalog";
 import { store, useStore } from "@/lib/storage";
+import { buildRowData } from "@/lib/triage";
 import type {
   Activity,
   GroupSummary,
   Reflection,
-  ScoreColor,
 } from "@/lib/types";
 import { cn, formatRelativeTime } from "@/lib/utils";
 
@@ -546,20 +546,10 @@ function ParticipantsSection({
     }
   }, [seen, groupId]);
 
-  const rows = useMemo<TriageRowData[]>(() => {
-    return reflections.map((reflection) => {
-      const a = reflection.analysis;
-      const color: ScoreColor = a?.scoreColor ?? "blue";
-      const level = a?.reflectionLevel ?? 1;
-      const quote = pickQuote(reflection);
-      const teacherMove =
-        a?.teacherFollowUp ?? a?.suggestedNextStep ?? "";
-      const hasSafetyAlert = (a?.contentAlerts ?? []).some(
-        (x) => x.severity === "high",
-      );
-      return { reflection, color, level, quote, teacherMove, hasSafetyAlert };
-    });
-  }, [reflections]);
+  const rows = useMemo<TriageRowData[]>(
+    () => reflections.map(buildRowData),
+    [reflections],
+  );
 
   const sorted = useMemo(() => {
     return [...rows].sort((a, b) => {
@@ -673,22 +663,6 @@ function ParticipantsSection({
       </div>
     </section>
   );
-}
-
-function pickQuote(r: Reflection): string {
-  const fromAnalysis = r.analysis?.studentQuotes?.[0];
-  if (fromAnalysis && fromAnalysis.trim()) return cleanQuote(fromAnalysis);
-  const fromResponse = r.responses[0]?.text;
-  if (fromResponse && fromResponse.trim()) {
-    const clean = fromResponse.trim();
-    return clean.length > 160 ? `${clean.slice(0, 157)}…` : clean;
-  }
-  return "";
-}
-
-function cleanQuote(q: string): string {
-  const trimmed = q.replace(/^["“”']|["“”']$/g, "").trim();
-  return trimmed.length > 160 ? `${trimmed.slice(0, 157)}…` : trimmed;
 }
 
 function loadSeen(groupId: string): Set<string> {
