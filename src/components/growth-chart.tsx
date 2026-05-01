@@ -24,10 +24,10 @@ const PAD_TOP = 16;
 const PAD_BOTTOM = 32;
 
 const COLOR_MAP: Record<ScoreColor, string> = {
-  sunny: "hsl(var(--triage-sunny))",
-  orange: "hsl(var(--triage-orange))",
-  blue: "hsl(var(--triage-blue))",
-  rose: "hsl(var(--triage-rose))",
+  sunny: "var(--color-triage-sunny)",
+  orange: "var(--color-triage-orange)",
+  blue: "var(--color-triage-blue)",
+  rose: "var(--color-triage-rose)",
 };
 
 export function GrowthChart({ reflections, className }: Props) {
@@ -131,7 +131,7 @@ export function GrowthChart({ reflections, className }: Props) {
               cy={p.y}
               r={4.5}
               fill={COLOR_MAP[p.color]}
-              stroke="hsl(var(--card))"
+              stroke="var(--color-card)"
               strokeWidth={1.5}
             />
           </g>

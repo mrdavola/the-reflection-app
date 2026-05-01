@@ -1,182 +1,198 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------
+   Refleckt — design tokens
+   Direction: "Marginalia" — paper, ink, restraint.
+   Light theme only. OKLCH for perceptually uniform colour.
+   --------------------------------------------------------------- */
+
 @theme inline {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-surface: hsl(var(--surface));
-  --color-surface-elevated: hsl(var(--surface-elevated));
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
+  /* Surfaces — warm ivory, never pure white. */
+  --color-background: oklch(0.985 0.008 82);
+  --color-surface: oklch(0.975 0.010 82);
+  --color-card: oklch(0.992 0.005 82);
+  --color-card-foreground: oklch(0.22 0.018 60);
+  --color-popover: oklch(0.992 0.005 82);
+  --color-popover-foreground: oklch(0.22 0.018 60);
 
-  /* Triage palette — quick visual status for teacher dashboards */
-  --color-triage-sunny: hsl(var(--triage-sunny));
-  --color-triage-sunny-bg: hsl(var(--triage-sunny-bg));
-  --color-triage-orange: hsl(var(--triage-orange));
-  --color-triage-orange-bg: hsl(var(--triage-orange-bg));
-  --color-triage-blue: hsl(var(--triage-blue));
-  --color-triage-blue-bg: hsl(var(--triage-blue-bg));
-  --color-triage-rose: hsl(var(--triage-rose));
-  --color-triage-rose-bg: hsl(var(--triage-rose-bg));
+  /* Ink — printed text, not pure black. */
+  --color-foreground: oklch(0.22 0.018 60);
+  --color-muted: oklch(0.94 0.010 82);
+  --color-muted-foreground: oklch(0.48 0.014 70);
 
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: var(--font-fraunces), "Iowan Old Style", "Apple Garamond", Georgia, serif;
+  /* Primary — fountain-pen ink. Used sparingly. */
+  --color-primary: oklch(0.34 0.060 252);
+  --color-primary-foreground: oklch(0.985 0.008 82);
+
+  /* Secondary — paper, with a hair of warmth. Reads as a quiet surface. */
+  --color-secondary: oklch(0.93 0.012 78);
+  --color-secondary-foreground: oklch(0.30 0.030 252);
+
+  /* Accent — muted carmine. Reserved for marginalia emphasis. */
+  --color-accent: oklch(0.92 0.030 25);
+  --color-accent-foreground: oklch(0.40 0.130 25);
+
+  /* Destructive — same carmine, more saturated. */
+  --color-destructive: oklch(0.55 0.150 25);
+  --color-destructive-foreground: oklch(0.985 0.008 82);
+
+  /* Edges. */
+  --color-border: oklch(0.88 0.010 78);
+  --color-input: oklch(0.92 0.010 78);
+  --color-ring: oklch(0.34 0.060 252);
+
+  /* Triage palette — semantic status colours, retuned for the warm palette. */
+  --color-triage-sunny: oklch(0.55 0.130 75);
+  --color-triage-sunny-bg: oklch(0.96 0.045 88);
+  --color-triage-orange: oklch(0.55 0.150 45);
+  --color-triage-orange-bg: oklch(0.95 0.040 55);
+  --color-triage-blue: oklch(0.42 0.090 245);
+  --color-triage-blue-bg: oklch(0.94 0.025 240);
+  --color-triage-rose: oklch(0.50 0.150 20);
+  --color-triage-rose-bg: oklch(0.95 0.035 20);
+
+  /* Type. */
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-display), "Iowan Old Style", "Apple Garamond", Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
 
-  --radius-sm: 0.5rem;
-  --radius-md: 0.875rem;
-  --radius-lg: 1.25rem;
-  --radius-xl: 1.75rem;
-  --radius-2xl: 2.25rem;
+  /* Spacing — 4pt scale. Use semantic tokens, not pixel-named. */
+  --spacing-hairline: 1px;
+  --spacing-rule: 0.0625rem;
+
+  /* Radius — restrained. Paper folds, not jellybeans. */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
 }
 
-:root {
-  --background: 36 45% 98%;
-  --foreground: 240 12% 12%;
-  --surface: 36 50% 97%;
-  --surface-elevated: 0 0% 100%;
-  --card: 0 0% 100%;
-  --card-foreground: 240 12% 12%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 240 12% 12%;
-
-  --primary: 261 60% 56%;            /* deep violet */
-  --primary-foreground: 0 0% 100%;
-
-  --secondary: 220 80% 60%;          /* calm blue */
-  --secondary-foreground: 0 0% 100%;
-
-  --muted: 240 10% 95%;
-  --muted-foreground: 240 8% 42%;
-
-  --accent: 261 80% 96%;             /* soft lilac wash */
-  --accent-foreground: 261 60% 30%;
-
-  --destructive: 0 70% 55%;
-  --destructive-foreground: 0 0% 100%;
-
-  --border: 240 12% 90%;
-  --input: 240 12% 92%;
-  --ring: 261 60% 56%;
-
-  --triage-sunny: 41 95% 38%;
-  --triage-sunny-bg: 48 100% 92%;
-  --triage-orange: 22 90% 45%;
-  --triage-orange-bg: 28 100% 93%;
-  --triage-blue: 220 70% 45%;
-  --triage-blue-bg: 220 90% 95%;
-  --triage-rose: 350 70% 45%;
-  --triage-rose-bg: 350 90% 96%;
-}
-
-.dark {
-  --background: 240 18% 7%;
-  --foreground: 0 0% 96%;
-  --surface: 240 18% 9%;
-  --surface-elevated: 240 16% 11%;
-  --card: 240 16% 11%;
-  --card-foreground: 0 0% 96%;
-  --popover: 240 16% 11%;
-  --popover-foreground: 0 0% 96%;
-
-  --primary: 261 75% 70%;
-  --primary-foreground: 240 18% 7%;
-
-  --secondary: 220 80% 70%;
-  --secondary-foreground: 240 18% 7%;
-
-  --muted: 240 12% 16%;
-  --muted-foreground: 240 8% 65%;
-
-  --accent: 261 30% 22%;
-  --accent-foreground: 261 80% 90%;
-
-  --destructive: 0 70% 60%;
-  --destructive-foreground: 0 0% 100%;
-
-  --border: 240 12% 20%;
-  --input: 240 12% 22%;
-  --ring: 261 75% 70%;
-
-  --triage-sunny: 41 95% 70%;
-  --triage-sunny-bg: 41 50% 18%;
-  --triage-orange: 22 90% 70%;
-  --triage-orange-bg: 22 50% 18%;
-  --triage-blue: 220 80% 75%;
-  --triage-blue-bg: 220 50% 18%;
-  --triage-rose: 350 80% 75%;
-  --triage-rose-bg: 350 40% 18%;
-}
-
-* {
-  border-color: hsl(var(--border));
-}
+/* ---------------------------------------------------------------
+   Base — paper-like surface, ink type.
+   --------------------------------------------------------------- */
 
 html,
 body {
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background: var(--color-background);
+  color: var(--color-foreground);
   font-family: var(--font-sans);
+  font-feature-settings: "ss01", "ss02", "kern";
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-body {
-  background-image:
-    radial-gradient(ellipse 80% 60% at 10% -10%, hsl(261 80% 92% / 0.55), transparent 60%),
-    radial-gradient(ellipse 60% 50% at 110% 0%, hsl(220 90% 92% / 0.5), transparent 60%);
-  background-attachment: fixed;
-}
-
-.dark body {
-  background-image:
-    radial-gradient(ellipse 80% 60% at 10% -10%, hsl(261 50% 18% / 0.7), transparent 60%),
-    radial-gradient(ellipse 60% 50% at 110% 0%, hsl(220 50% 18% / 0.6), transparent 60%);
-}
-
 .font-display {
   font-family: var(--font-display);
-  letter-spacing: -0.012em;
+  letter-spacing: -0.018em;
 }
 
+/* Tighten Atkinson body type at small sizes for UI rhythm. */
+body {
+  font-size: 16px;
+  line-height: 1.55;
+  letter-spacing: -0.005em;
+}
+
+/* Cap reading measure — body copy should not exceed a comfortable line. */
+.prose-measure {
+  max-width: 68ch;
+}
+
+/* ---------------------------------------------------------------
+   Marginalia — emphasis as a teacher's underline.
+   Use sparingly: <em class="marginalia">one phrase per paragraph</em>.
+   --------------------------------------------------------------- */
+
+.marginalia {
+  position: relative;
+  font-style: normal;
+  background-image: linear-gradient(
+    to right,
+    var(--color-accent-foreground) 0%,
+    var(--color-accent-foreground) 100%
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 0.12em;
+  background-position: 0 92%;
+  padding-bottom: 0.06em;
+}
+
+.marginalia--ink {
+  background-image: linear-gradient(
+    to right,
+    var(--color-primary) 0%,
+    var(--color-primary) 100%
+  );
+}
+
+/* Pencil-stroke divider — like a ruled line in a composition book. */
+.rule-soft {
+  border: 0;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent 0,
+    var(--color-border) 12%,
+    var(--color-border) 88%,
+    transparent 100%
+  );
+}
+
+/* Margin caption — used for editorial annotations next to body copy. */
+.margin-note {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 14;
+  font-style: italic;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--color-muted-foreground);
+}
+
+/* ---------------------------------------------------------------
+   Microinteractions — restrained.
+   --------------------------------------------------------------- */
+
 @keyframes pulse-record {
-  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--destructive) / 0.6); }
-  50% { box-shadow: 0 0 0 12px hsl(var(--destructive) / 0); }
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.55 0.150 25 / 0.5); }
+  50%      { box-shadow: 0 0 0 10px oklch(0.55 0.150 25 / 0); }
 }
 .recording-pulse {
-  animation: pulse-record 1.4s ease-out infinite;
+  animation: pulse-record 1.6s ease-out infinite;
 }
 
 @keyframes shimmer {
-  0% { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
 }
 .shimmer {
   background: linear-gradient(
     90deg,
-    hsl(var(--muted)) 0%,
-    hsl(var(--accent)) 50%,
-    hsl(var(--muted)) 100%
+    var(--color-muted) 0%,
+    var(--color-secondary) 50%,
+    var(--color-muted) 100%
   );
   background-size: 800px 100%;
-  animation: shimmer 2.2s linear infinite;
+  animation: shimmer 2.4s linear infinite;
 }
 
 ::selection {
-  background: hsl(var(--primary) / 0.18);
-  color: hsl(var(--foreground));
+  background: oklch(0.34 0.060 252 / 0.18);
+  color: var(--color-foreground);
+}
+
+/* Reset default border colour to the new ink-tinted border token. */
+* {
+  border-color: var(--color-border);
+}
+
+/* Respect reduced-motion preferences. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

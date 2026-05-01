@@ -6,27 +6,27 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-[0_8px_24px_-12px_hsl(var(--primary)/0.6)] hover:bg-primary/90 active:scale-[0.98]",
+          "bg-primary text-primary-foreground hover:bg-[oklch(0.30_0.060_252)]",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-[0_8px_24px_-12px_hsl(var(--secondary)/0.6)] hover:bg-secondary/90 active:scale-[0.98]",
+          "bg-secondary text-secondary-foreground hover:bg-[oklch(0.91_0.012_78)] ring-1 ring-inset ring-border",
         outline:
           "border border-border bg-card hover:bg-muted text-foreground",
         ghost: "hover:bg-muted text-foreground",
-        soft: "bg-accent text-accent-foreground hover:bg-accent/80",
+        soft: "bg-accent text-accent-foreground hover:bg-[oklch(0.90_0.030_25)]",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        link: "text-primary underline-offset-4 hover:underline rounded-none",
+          "bg-destructive text-destructive-foreground hover:bg-[oklch(0.50_0.150_25)]",
+        link: "text-primary underline underline-offset-4 decoration-1 hover:decoration-2 rounded-none",
       },
       size: {
         default: "h-10 px-5 py-2",
-        sm: "h-9 px-4 text-sm",
+        sm: "h-9 px-4 text-[0.8125rem]",
         lg: "h-12 px-7 text-base",
-        xl: "h-14 px-8 text-base",
+        xl: "h-14 px-9 text-base",
         icon: "h-10 w-10",
       },
     },

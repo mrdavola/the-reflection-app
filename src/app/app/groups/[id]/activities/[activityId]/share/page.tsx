@@ -260,7 +260,7 @@ function QrPlaceholder({ seed }: { seed: string }) {
               y={Math.floor(i / size)}
               width={1}
               height={1}
-              fill="hsl(var(--foreground))"
+              fill="var(--color-foreground)"
             />
           ) : null,
         )}

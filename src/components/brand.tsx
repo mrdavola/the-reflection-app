@@ -5,14 +5,24 @@ export function Brand({ className, href = "/app" }: { className?: string; href?:
   return (
     <Link
       href={href}
-      className={cn("inline-flex items-center gap-2 font-display text-lg font-semibold tracking-tight", className)}
+      className={cn(
+        "group inline-flex items-baseline gap-2 font-display text-[1.0625rem] font-medium tracking-tight",
+        className,
+      )}
     >
-      <BrandMark className="h-7 w-7" />
-      <span className="text-foreground">The Reflection App</span>
+      <BrandMark className="h-7 w-7 -mb-1.5" />
+      <span className="text-foreground">
+        Refleckt
+        <span aria-hidden className="text-[oklch(0.50_0.150_25)]">.</span>
+      </span>
     </Link>
   );
 }
 
+/**
+ * The mark reads as a bookplate stamp: a hairline serif "R" in a soft
+ * paper square, with a single carmine annotation dot — a reader's mark.
+ */
 export function BrandMark({ className }: { className?: string }) {
   return (
     <svg
@@ -22,18 +32,28 @@ export function BrandMark({ className }: { className?: string }) {
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden
     >
-      <defs>
-        <linearGradient id="r-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="hsl(261 60% 56%)" />
-          <stop offset="1" stopColor="hsl(220 80% 60%)" />
-        </linearGradient>
-      </defs>
-      <rect width="32" height="32" rx="9" fill="url(#r-grad)" />
-      <path
-        d="M9.6 21.6V10.4h6.72c2.4 0 4 1.44 4 3.84 0 1.68-.96 2.88-2.4 3.36L21.12 21.6h-2.88l-2.88-3.84h-2.4v3.84H9.6Zm3.36-6.4h3.04c1.04 0 1.6-.56 1.6-1.44 0-.88-.56-1.44-1.6-1.44h-3.04v2.88Z"
-        fill="white"
-        fillOpacity="0.96"
+      <rect
+        x="1.25"
+        y="1.25"
+        width="29.5"
+        height="29.5"
+        rx="5"
+        fill="oklch(0.992 0.005 82)"
+        stroke="oklch(0.34 0.060 252)"
+        strokeWidth="1.25"
       />
+      <text
+        x="16"
+        y="22.5"
+        textAnchor="middle"
+        fontFamily="var(--font-display), Georgia, serif"
+        fontSize="20"
+        fontWeight="600"
+        fill="oklch(0.34 0.060 252)"
+      >
+        R
+      </text>
+      <circle cx="25.5" cy="6.5" r="1.6" fill="oklch(0.55 0.150 25)" />
     </svg>
   );
 }

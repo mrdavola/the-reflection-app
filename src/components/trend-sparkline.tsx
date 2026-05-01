@@ -13,9 +13,9 @@ function colorForLevel(level: number): string {
   // Mirrors the analysis-side level→scoreColor mapping.
   // 1 → blue, 2 → orange, 3+ → sunny.
   const rounded = Math.round(level);
-  if (rounded >= 3) return "hsl(var(--triage-sunny))";
-  if (rounded === 2) return "hsl(var(--triage-orange))";
-  return "hsl(var(--triage-blue))";
+  if (rounded >= 3) return "var(--color-triage-sunny)";
+  if (rounded === 2) return "var(--color-triage-orange)";
+  return "var(--color-triage-blue)";
 }
 
 export function TrendSparkline({
@@ -77,7 +77,7 @@ export function TrendSparkline({
       <path
         d={pathD}
         fill="none"
-        stroke="hsl(var(--foreground) / 0.35)"
+        stroke="color-mix(in oklch, var(--color-foreground) 35%, transparent)"
         strokeWidth={1.5}
         strokeLinecap="round"
         strokeLinejoin="round"
