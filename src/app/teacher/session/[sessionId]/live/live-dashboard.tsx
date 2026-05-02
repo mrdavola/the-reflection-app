@@ -384,6 +384,8 @@ export default function LiveDashboard({ sessionId }: { sessionId: string }) {
                             ? "bg-[#fd4401] text-white"
                             : card.kind === "celebrate"
                               ? "bg-[#04c6c5]"
+                              : card.kind === "peer-match"
+                                ? "bg-[#9b51e0] text-white"
                             : "bg-[#fff2b7]"
                         }`}
                       >
@@ -392,6 +394,8 @@ export default function LiveDashboard({ sessionId }: { sessionId: string }) {
                             ? "Review now"
                             : card.kind === "celebrate"
                               ? "Shareable thinking"
+                              : card.kind === "peer-match"
+                                ? "Peer Match"
                               : "Needs support"}
                         </p>
                         <p className="mt-1 font-black">{card.title}</p>

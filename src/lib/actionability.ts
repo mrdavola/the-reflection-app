@@ -9,7 +9,7 @@ export type TeacherNextMove = {
 
 export type PriorityCard = {
   id: string;
-  kind: "urgent" | "support" | "celebrate";
+  kind: "urgent" | "support" | "celebrate" | "peer-match";
   title: string;
   evidence: string;
   action: string;
@@ -115,7 +115,25 @@ export function getPriorityCards(dashboard: DashboardPayload): PriorityCard[] {
       studentName: reflection.displayName,
     }));
 
-  return [...alertCards, ...supportCards, ...celebrateCards].slice(0, 6);
+  const peerMatchCards: PriorityCard[] = [];
+  const allClusters = dashboard.session.classThinkingMap ? Object.values(dashboard.session.classThinkingMap).flat() : [];
+  const similarityCluster = allClusters.find((c) => c.studentIds.length >= 2);
+  if (similarityCluster) {
+    const student1 = dashboard.participants.find((p) => p.id === similarityCluster.studentIds[0]);
+    const student2 = dashboard.participants.find((p) => p.id === similarityCluster.studentIds[1]);
+    if (student1 && student2) {
+      peerMatchCards.push({
+        id: `peer-match-${similarityCluster.label.replace(/\s+/g, '-')}`,
+        kind: "peer-match",
+        title: `Peer Match: ${student1.displayName} & ${student2.displayName}`,
+        evidence: `Both noticed: ${similarityCluster.label}`,
+        action: "Have them discuss their shared thoughts for 2 minutes.",
+        studentName: student1.displayName,
+      });
+    }
+  }
+
+  return [...alertCards, ...peerMatchCards, ...supportCards, ...celebrateCards].slice(0, 6);
 }
 
 function getReflectionScore(reflection: Reflection) {
