@@ -167,6 +167,14 @@ export default function TeacherPage() {
               body="Launch the visible thinking routine with an uploaded, linked, text, or AI-generated stimulus."
               color="bg-[#fd4401] text-white"
             />
+            <LaunchCard
+              href="/teacher/spin/new"
+              icon={<Sparkles size={26} />}
+              title="Quick Spin"
+              kicker="Randomized prompt"
+              body="Project a spinner, select a category, and generate a random reflection question to launch."
+              color="bg-[#04c6c5] text-black"
+            />
             <button
               onClick={seedDemo}
               disabled={!isTeacherSession || loading}
