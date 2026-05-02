@@ -10,6 +10,7 @@ import {
   MessageCircle,
   Play,
   Sparkles,
+  Zap,
 } from "lucide-react";
 import { getFirebaseClientServices } from "@/lib/firebase/client";
 import type { Session } from "@/lib/models";
@@ -174,6 +175,14 @@ export default function TeacherPage() {
               kicker="Randomized prompt"
               body="Project a spinner, select a category, and generate a random reflection question to launch."
               color="bg-[#04c6c5] text-black"
+            />
+            <LaunchCard
+              href="/teacher/wyr/new"
+              icon={<Zap size={26} />}
+              title="Would You Rather"
+              kicker="AI Lesson Starter"
+              body="Generate a quick, curriculum-aligned scenario to spark debate."
+              color="bg-[#9b51e0] text-white"
             />
             <button
               onClick={seedDemo}
