@@ -87,10 +87,24 @@ export default function Snapshot({ reflectionId }: { reflectionId: string }) {
         </div>
 
         <div className="mt-6 grid gap-3 text-left">
-          {reflection.steps.map((step) => (
-            <div key={step.label} className="soft-panel p-5">
+          {reflection.steps.map((step, index) => (
+            <div key={`${step.label}-${index}`} className="soft-panel p-5 relative border-l-4 border-[#006cff]">
               <p className="display-type text-2xl font-bold">{step.label}</p>
-              <p className="mt-2 text-lg font-semibold leading-7">{step.transcription}</p>
+              {step.prompt && (
+                <p className="mt-1 text-sm font-black uppercase tracking-[0.08em] text-slate-500">
+                  {step.prompt}
+                </p>
+              )}
+              <p className="mt-2 text-lg font-semibold leading-7">"{step.transcription}"</p>
+              
+              {step.followUpQuestion && (
+                <div className="mt-4 p-4 bg-white rounded-xl border-2 border-slate-200">
+                  <p className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.08em] text-[#006cff]">
+                    <Sparkles size={16} /> AI Follow-up
+                  </p>
+                  <p className="mt-1 font-bold">{step.followUpQuestion}</p>
+                </div>
+              )}
             </div>
           ))}
         </div>
