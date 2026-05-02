@@ -10,12 +10,32 @@ export default function Snapshot({ reflectionId }: { reflectionId: string }) {
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
   const [reflection, setReflection] = useState<Reflection | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetch(`/api/reflections/${reflectionId}?token=${encodeURIComponent(token)}`, { cache: "no-store" })
-      .then((response) => response.json())
-      .then((data) => setReflection(data.reflection));
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error ?? "Could not load your snapshot.");
+        }
+        setReflection(data.reflection);
+      })
+      .catch((loadError) =>
+        setError(loadError instanceof Error ? loadError.message : "Could not load your snapshot."),
+      );
   }, [reflectionId, token]);
+
+  if (error) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-[#fdcb40] p-8 text-black">
+        <div className="panel max-w-lg p-6 text-center">
+          <h1 className="display-type text-4xl font-bold">Snapshot unavailable</h1>
+          <p className="mt-2 text-lg font-semibold">{error}</p>
+        </div>
+      </main>
+    );
+  }
 
   if (!reflection) {
     return <main className="min-h-screen bg-[#fdcb40] p-8 text-xl font-bold">Loading snapshot...</main>;

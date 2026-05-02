@@ -15,7 +15,7 @@ export default function JoinForm({ initialJoinCode }: { initialJoinCode: string 
     setJoining(true);
     setError("");
 
-    let code = joinCode;
+    let code = joinCode.trim().toUpperCase();
     if (initialJoinCode === "DEMO" && !code) {
       const seeded = await fetch("/api/demo/seed", { method: "POST" }).then((res) => res.json());
       code = seeded.session.joinCode;
@@ -24,7 +24,7 @@ export default function JoinForm({ initialJoinCode }: { initialJoinCode: string 
     const response = await fetch("/api/join", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ joinCode: code, displayName }),
+      body: JSON.stringify({ joinCode: code, displayName: displayName.trim() }),
     });
     const data = await response.json();
     setJoining(false);
@@ -54,8 +54,8 @@ export default function JoinForm({ initialJoinCode }: { initialJoinCode: string 
             Join reflection
           </h1>
           <p className="mt-5 text-2xl font-semibold leading-8">
-            Enter your first name. Your teacher will see your thinking as you
-            move through See Think Wonder.
+            Enter your first name and class code. Your teacher will see your
+            reflection as part of the class thinking map.
           </p>
         </div>
 

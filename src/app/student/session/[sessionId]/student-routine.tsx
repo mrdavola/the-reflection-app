@@ -3,11 +3,54 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Keyboard, MessageCircle, Mic, Send, Square } from "lucide-react";
-import type { DashboardPayload } from "@/lib/models";
+import type { Session } from "@/lib/models";
 import type { ExitTicketTurnAnalysis } from "@/lib/ai/schemas";
 import { SEE_THINK_WONDER_ROUTINE } from "@/lib/routines";
 
 type Mode = "voice" | "text";
+type StudentSessionPayload = {
+  session: Pick<
+    Session,
+    | "id"
+    | "routineId"
+    | "title"
+    | "learningTarget"
+    | "stimulus"
+    | "exitTicketQuestion"
+    | "exitTicketMaxTurns"
+  >;
+};
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionResultEventLike) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+type SpeechRecognitionResultEventLike = {
+  results: ArrayLike<ArrayLike<{ transcript: string }>>;
+};
+
+function getSpeechRecognition() {
+  if (typeof window === "undefined") return null;
+  const speechWindow = window as Window & {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  };
+  return speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition ?? null;
+}
+
+function collectSpeechTranscript(event: SpeechRecognitionResultEventLike) {
+  return Array.from(event.results)
+    .map((result) => result[0]?.transcript ?? "")
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 export default function StudentRoutine({ sessionId }: { sessionId: string }) {
   const router = useRouter();
@@ -21,40 +64,94 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
   const [recording, setRecording] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [transcripts, setTranscripts] = useState<string[]>([]);
+  const [voiceTranscript, setVoiceTranscript] = useState("");
   const [error, setError] = useState("");
-  const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
+  const [studentSession, setStudentSession] = useState<StudentSessionPayload | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
+  const speechRecognition = useRef<SpeechRecognitionLike | null>(null);
+  const voiceTranscriptRef = useRef("");
   const chunks = useRef<Blob[]>([]);
   const timer = useRef<number | null>(null);
   const step = SEE_THINK_WONDER_ROUTINE.steps[stepIndex];
 
   useEffect(() => {
-    fetch(`/api/sessions/${sessionId}`, { cache: "no-store" })
+    fetch(
+      `/api/student/sessions/${sessionId}?reflectionId=${encodeURIComponent(reflectionId)}&token=${encodeURIComponent(token)}`,
+      { cache: "no-store" },
+    )
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
-        if (data) setDashboard(data);
+        if (data) setStudentSession(data);
       });
 
     return () => {
       if (timer.current) window.clearInterval(timer.current);
       recorder.current?.stream.getTracks().forEach((track) => track.stop());
+      speechRecognition.current?.stop();
     };
-  }, [sessionId]);
+  }, [reflectionId, sessionId, token]);
 
   async function startRecording() {
     setError("");
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    chunks.current = [];
-    const mediaRecorder = new MediaRecorder(stream);
-    recorder.current = mediaRecorder;
-    mediaRecorder.ondataavailable = (event) => chunks.current.push(event.data);
-    mediaRecorder.start();
-    setRecording(true);
-    setSeconds(0);
-    timer.current = window.setInterval(() => setSeconds((value) => value + 1), 1000);
+    setVoiceTranscript("");
+    voiceTranscriptRef.current = "";
+    const SpeechRecognition = getSpeechRecognition();
+
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      speechRecognition.current = recognition;
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+      recognition.onresult = (event) => {
+        const transcript = collectSpeechTranscript(event);
+        voiceTranscriptRef.current = transcript;
+        setVoiceTranscript(transcript);
+      };
+      recognition.onerror = () => {
+        setError("The microphone could not hear you clearly. You can type instead.");
+        setRecording(false);
+        setMode("text");
+        if (timer.current) window.clearInterval(timer.current);
+      };
+      recognition.start();
+      setRecording(true);
+      setSeconds(0);
+      timer.current = window.setInterval(() => setSeconds((value) => value + 1), 1000);
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      chunks.current = [];
+      const mediaRecorder = new MediaRecorder(stream);
+      recorder.current = mediaRecorder;
+      mediaRecorder.ondataavailable = (event) => chunks.current.push(event.data);
+      mediaRecorder.start();
+      setRecording(true);
+      setSeconds(0);
+      timer.current = window.setInterval(() => setSeconds((value) => value + 1), 1000);
+    } catch {
+      setError("Microphone permission was blocked. You can type your thinking instead.");
+      setMode("text");
+    }
   }
 
   async function stopAndSubmitAudio() {
+    if (speechRecognition.current) {
+      speechRecognition.current.stop();
+      speechRecognition.current = null;
+      if (timer.current) window.clearInterval(timer.current);
+      setRecording(false);
+      const transcript = voiceTranscriptRef.current.trim();
+      if (transcript.length < 3) {
+        setError("We did not catch enough words. Try again or switch to typing.");
+        return;
+      }
+      await submitRoutineText(transcript);
+      return;
+    }
+
     if (!recorder.current) return;
     setSubmitting(true);
     setRecording(false);
@@ -78,6 +175,10 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
   }
 
   async function submitText() {
+    await submitRoutineText(text);
+  }
+
+  async function submitRoutineText(transcription: string) {
     setSubmitting(true);
     setError("");
     const response = await fetch(
@@ -85,13 +186,13 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ participantToken: token, transcription: text }),
+        body: JSON.stringify({ participantToken: token, transcription }),
       },
     );
-    await handleStepResponse(response);
+    await handleStepResponse(response, transcription);
   }
 
-  async function handleStepResponse(response: Response) {
+  async function handleStepResponse(response: Response, fallbackTranscript = text) {
     const data = await response.json();
     setSubmitting(false);
 
@@ -100,8 +201,10 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
       return;
     }
 
-    setTranscripts((items) => [...items, data.transcript ?? text]);
+    setTranscripts((items) => [...items, data.transcript ?? fallbackTranscript]);
     setText("");
+    setVoiceTranscript("");
+    voiceTranscriptRef.current = "";
 
     if (stepIndex < SEE_THINK_WONDER_ROUTINE.steps.length - 1) {
       setStepIndex((index) => index + 1);
@@ -134,7 +237,7 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
     );
   }
 
-  if (!dashboard) {
+  if (!studentSession) {
     return (
       <main className="grid min-h-screen place-items-center bg-[#fdcb40] p-6 text-black">
         <div className="panel max-w-lg p-6 text-center">
@@ -145,14 +248,14 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
     );
   }
 
-  if (dashboard.session.routineId === "exit-ticket-conversation") {
+  if (studentSession.session.routineId === "exit-ticket-conversation") {
     return (
       <ExitTicketConversation
         sessionId={sessionId}
         reflectionId={reflectionId}
         token={token}
-        question={dashboard.session.exitTicketQuestion ?? "What are you thinking about today's lesson?"}
-        maxTurns={dashboard.session.exitTicketMaxTurns ?? 4}
+        question={studentSession.session.exitTicketQuestion ?? "What are you thinking about today's lesson?"}
+        maxTurns={studentSession.session.exitTicketMaxTurns ?? 4}
       />
     );
   }
@@ -171,7 +274,7 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
             {step.studentCue}
           </p>
 
-          <StimulusBlock stimulus={dashboard.session.stimulus} />
+          <StimulusBlock stimulus={studentSession.session.stimulus} />
 
           <div className="mt-8 flex gap-2">
             <button
@@ -213,6 +316,14 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
                     : "You can stop when your thought feels complete."
                   : "Tap the microphone and speak your thinking."}
               </p>
+              {voiceTranscript ? (
+                <div className="mt-5 rounded-[20px] border-2 border-black bg-white p-4 text-left">
+                  <p className="text-xs font-black uppercase tracking-[0.08em]">
+                    We heard
+                  </p>
+                  <p className="mt-2 text-lg font-bold leading-7">{voiceTranscript}</p>
+                </div>
+              ) : null}
             </div>
           ) : (
             <div className="mt-8">
@@ -324,15 +435,77 @@ function ExitTicketConversation({
   const router = useRouter();
   const [turnIndex, setTurnIndex] = useState(0);
   const [prompt, setPrompt] = useState(question);
+  const [mode, setMode] = useState<Mode>("voice");
   const [text, setText] = useState("");
+  const [seconds, setSeconds] = useState(0);
+  const [listening, setListening] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [lastAnalysis, setLastAnalysis] = useState<ExitTicketTurnAnalysis | null>(null);
   const [conversation, setConversation] = useState<
     Array<{ prompt: string; response: string; analysis: ExitTicketTurnAnalysis }>
   >([]);
+  const speechRecognition = useRef<SpeechRecognitionLike | null>(null);
+  const voiceTranscriptRef = useRef("");
+  const timer = useRef<number | null>(null);
 
-  async function submitTurn() {
+  useEffect(() => {
+    return () => {
+      speechRecognition.current?.stop();
+      if (timer.current) window.clearInterval(timer.current);
+    };
+  }, []);
+
+  function startVoiceTurn() {
+    setError("");
+    setVoiceTranscript("");
+    voiceTranscriptRef.current = "";
+    const SpeechRecognition = getSpeechRecognition();
+    if (!SpeechRecognition) {
+      setError("Voice is not available in this browser. Type your response instead.");
+      setMode("text");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    speechRecognition.current = recognition;
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+    recognition.onresult = (event) => {
+      const transcript = collectSpeechTranscript(event);
+      voiceTranscriptRef.current = transcript;
+      setVoiceTranscript(transcript);
+    };
+    recognition.onerror = () => {
+      setError("The microphone could not hear you clearly. You can type instead.");
+      setListening(false);
+      setMode("text");
+      if (timer.current) window.clearInterval(timer.current);
+    };
+    recognition.start();
+    setListening(true);
+    setSeconds(0);
+    timer.current = window.setInterval(() => setSeconds((value) => value + 1), 1000);
+  }
+
+  async function stopVoiceTurn() {
+    speechRecognition.current?.stop();
+    speechRecognition.current = null;
+    if (timer.current) window.clearInterval(timer.current);
+    setListening(false);
+
+    const transcript = voiceTranscriptRef.current.trim();
+    if (transcript.length < 3) {
+      setError("We did not catch enough words. Try again or switch to typing.");
+      return;
+    }
+
+    await submitTurn(transcript);
+  }
+
+  async function submitTurn(responseText = text) {
     setSubmitting(true);
     setError("");
     const response = await fetch(`/api/reflections/${reflectionId}/exit-ticket/turn`, {
@@ -341,7 +514,7 @@ function ExitTicketConversation({
       body: JSON.stringify({
         participantToken: token,
         prompt,
-        response: text,
+        response: responseText,
         turnIndex,
       }),
     });
@@ -356,9 +529,11 @@ function ExitTicketConversation({
     setLastAnalysis(data.analysis);
     setConversation((items) => [
       ...items,
-      { prompt, response: text, analysis: data.analysis },
+      { prompt, response: responseText, analysis: data.analysis },
     ]);
     setText("");
+    setVoiceTranscript("");
+    voiceTranscriptRef.current = "";
 
     if (data.complete) {
       router.push(`/student/reflection/${reflectionId}/snapshot?token=${token}`);
@@ -404,21 +579,74 @@ function ExitTicketConversation({
             </div>
           ) : null}
 
-          <div className="mt-8">
-            <textarea
-              value={text}
-              onChange={(event) => setText(event.target.value)}
-              className="focus-ring min-h-56 w-full rounded-[24px] border-2 border-black bg-white p-5 text-xl font-semibold leading-8"
-              placeholder="Type your thinking here..."
-            />
+          <div className="mt-8 flex gap-2">
             <button
-              onClick={submitTurn}
-              disabled={submitting || text.trim().length < 3}
-              className="focus-ring mt-4 inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#fd4401] px-7 py-4 font-bold text-white transition hover:-translate-y-0.5 disabled:opacity-50"
+              onClick={() => setMode("voice")}
+              className={`focus-ring inline-flex items-center gap-2 rounded-full border-2 border-black px-5 py-3 font-black ${
+                mode === "voice" ? "bg-[#006cff] text-white" : "bg-white"
+              }`}
             >
-              {submitting ? "Thinking..." : turnIndex >= maxTurns - 1 ? "Finish" : "Send"}
-              <Send size={18} />
+              <Mic size={18} />
+              Voice
             </button>
+            <button
+              onClick={() => setMode("text")}
+              className={`focus-ring inline-flex items-center gap-2 rounded-full border-2 border-black px-5 py-3 font-black ${
+                mode === "text" ? "bg-[#006cff] text-white" : "bg-white"
+              }`}
+            >
+              <Keyboard size={18} />
+              Type
+            </button>
+          </div>
+
+          <div className="mt-8">
+            {mode === "voice" ? (
+              <div className="rounded-[24px] border-2 border-black bg-[#fff2b7] p-6 text-center">
+                <button
+                  onClick={listening ? stopVoiceTurn : startVoiceTurn}
+                  disabled={submitting}
+                  className={`focus-ring mx-auto grid size-36 place-items-center rounded-full border-2 border-black text-white transition hover:-translate-y-0.5 ${
+                    listening ? "bg-[#fd4401]" : "bg-[#006cff]"
+                  } disabled:opacity-50`}
+                >
+                  {listening ? <Square size={36} /> : <Mic size={42} />}
+                </button>
+                <p className="display-type mt-5 text-5xl font-bold">{seconds}s</p>
+                <p className="mt-2 text-lg font-bold">
+                  {listening
+                    ? "Stop when your thought feels complete."
+                    : "Tap the microphone and answer in your own words."}
+                </p>
+                {voiceTranscript ? (
+                  <div className="mt-5 rounded-[20px] border-2 border-black bg-white p-4 text-left">
+                    <p className="text-xs font-black uppercase tracking-[0.08em]">
+                      We heard
+                    </p>
+                    <p className="mt-2 text-lg font-bold leading-7">
+                      {voiceTranscript}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <>
+                <textarea
+                  value={text}
+                  onChange={(event) => setText(event.target.value)}
+                  className="focus-ring min-h-56 w-full rounded-[24px] border-2 border-black bg-white p-5 text-xl font-semibold leading-8"
+                  placeholder="Type your thinking here..."
+                />
+                <button
+                  onClick={() => submitTurn()}
+                  disabled={submitting || text.trim().length < 3}
+                  className="focus-ring mt-4 inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#fd4401] px-7 py-4 font-bold text-white transition hover:-translate-y-0.5 disabled:opacity-50"
+                >
+                  {submitting ? "Thinking..." : turnIndex >= maxTurns - 1 ? "Finish" : "Send"}
+                  <Send size={18} />
+                </button>
+              </>
+            )}
           </div>
           {error ? <p className="mt-4 font-black text-[#fd4401]">{error}</p> : null}
         </div>
