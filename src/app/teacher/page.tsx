@@ -151,7 +151,7 @@ export default function TeacherPage() {
         </div>
 
         {isTeacherSession ? (
-          <section className="mt-10 grid gap-5 lg:grid-cols-3">
+          <section className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             <LaunchCard
               href="/teacher/exit-ticket/new"
               icon={<MessageCircle size={26} />}
@@ -180,28 +180,34 @@ export default function TeacherPage() {
               href="/teacher/wyr/new"
               icon={<Zap size={26} />}
               title="Would You Rather"
-              kicker="AI Lesson Starter"
-              body="Generate a quick, curriculum-aligned scenario to spark debate."
+              kicker="AI lesson starter"
+              body="Generate a curriculum-aligned Would You Rather scenario to spark debate and reasoning."
               color="bg-[#9b51e0] text-white"
             />
+          </section>
+          <section className="mt-5">
             <button
               onClick={seedDemo}
               disabled={!isTeacherSession || loading}
-              className="focus-ring rounded-[28px] border-2 border-black bg-white p-7 text-left transition hover:-translate-y-0.5 disabled:opacity-50"
+              className="focus-ring w-full rounded-[28px] border-2 border-black bg-white p-7 text-left transition hover:-translate-y-0.5 disabled:opacity-50"
             >
-              <div className="grid size-14 place-items-center rounded-[18px] border-2 border-black bg-[#fff2b7]">
-                <Play size={26} />
+              <div className="flex flex-wrap items-center gap-6">
+                <div className="grid size-14 place-items-center rounded-[18px] border-2 border-black bg-[#fff2b7]">
+                  <Play size={26} />
+                </div>
+                <div>
+                  <p className="text-sm font-black uppercase tracking-[0.08em]">
+                    Sample dashboard
+                  </p>
+                  <h2 className="display-type mt-1 text-4xl font-bold leading-none">
+                    Demo Class
+                  </h2>
+                </div>
+                <p className="ml-auto max-w-md text-lg font-bold leading-7">
+                  Fill a session with sample student thinking so you can preview the
+                  live dashboard without a room full of students.
+                </p>
               </div>
-              <p className="mt-5 text-sm font-black uppercase tracking-[0.08em]">
-                Sample dashboard
-              </p>
-              <h2 className="display-type mt-2 text-4xl font-bold leading-none">
-                Demo Class
-              </h2>
-              <p className="mt-4 text-lg font-bold leading-7">
-                Fill a session with sample student thinking so you can preview the
-                live dashboard without a room full of students.
-              </p>
             </button>
           </section>
         ) : null}
