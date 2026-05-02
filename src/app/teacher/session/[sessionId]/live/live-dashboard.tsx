@@ -12,6 +12,7 @@ import {
   QrCode,
   Users,
 } from "lucide-react";
+import { getPriorityCards, getTeacherNextMove } from "@/lib/actionability";
 import type { DashboardPayload } from "@/lib/models";
 
 export default function LiveDashboard({ sessionId }: { sessionId: string }) {
@@ -90,7 +91,9 @@ export default function LiveDashboard({ sessionId }: { sessionId: string }) {
     );
   }
 
-  const { session, participants, reflections, alerts } = dashboard;
+  const { session, participants, reflections } = dashboard;
+  const nextMove = getTeacherNextMove(dashboard);
+  const priorityCards = getPriorityCards(dashboard);
 
   return (
     <main className="min-h-screen bg-[#fdcb40] px-5 py-5 text-black">
@@ -113,10 +116,10 @@ export default function LiveDashboard({ sessionId }: { sessionId: string }) {
           </div>
           <div className="flex items-center gap-4 rounded-[24px] border-2 border-black bg-white p-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            {qr ? <img src={qr} alt="Student join QR code" className="size-24" /> : null}
+            {qr ? <img src={qr} alt="Student join QR code" className="size-32" /> : null}
             <div>
               <p className="text-sm font-black uppercase tracking-[0.08em]">Join code</p>
-              <p className="display-type text-4xl font-bold tracking-[0.12em]">
+              <p className="display-type text-5xl font-bold tracking-[0.12em]">
                 {session.joinCode}
               </p>
               <button
@@ -132,6 +135,25 @@ export default function LiveDashboard({ sessionId }: { sessionId: string }) {
 
         <div className="mt-5 grid gap-5 xl:grid-cols-[320px_1fr_360px]">
           <aside className="space-y-5">
+            <section className={`rounded-[24px] border-2 border-black p-5 ${
+              nextMove.tone === "urgent"
+                ? "bg-[#fd4401] text-white"
+                : nextMove.tone === "setup"
+                  ? "bg-[#006cff] text-white"
+                  : "bg-[#fff2b7]"
+            }`}>
+              <p className="text-sm font-black uppercase tracking-[0.08em]">
+                Next 5-minute move
+              </p>
+              <h2 className="display-type mt-2 text-3xl font-bold leading-none">
+                {nextMove.title}
+              </h2>
+              <p className="mt-4 text-lg font-black leading-6">{nextMove.action}</p>
+              <p className="mt-3 text-sm font-bold leading-6 opacity-80">
+                {nextMove.detail}
+              </p>
+            </section>
+
             <section className="rounded-[24px] border-2 border-black bg-[#006cff] p-5 text-white">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="display-type text-3xl font-bold leading-none">
@@ -336,35 +358,36 @@ export default function LiveDashboard({ sessionId }: { sessionId: string }) {
                 <AlertTriangle size={20} className="text-[#fd4401]" />
               </div>
               <div className="mt-4 space-y-3">
-                {alerts.length > 0
-                  ? alerts.map((alert) => (
+                {priorityCards.length > 0
+                  ? priorityCards.map((card) => (
                       <div
-                        key={alert.id}
+                        key={card.id}
                         className={`rounded-[20px] border-2 border-black p-4 ${
-                          alert.severity === "red"
+                          card.kind === "urgent"
                             ? "bg-[#fd4401] text-white"
+                            : card.kind === "celebrate"
+                              ? "bg-[#04c6c5]"
                             : "bg-[#fff2b7]"
                         }`}
                       >
-                        <p className="font-black">{alert.displayName}: {alert.title}</p>
-                        <p className="mt-1 text-sm font-semibold">{alert.message}</p>
+                        <p className="text-xs font-black uppercase tracking-[0.08em]">
+                          {card.kind === "urgent"
+                            ? "Review now"
+                            : card.kind === "celebrate"
+                              ? "Shareable thinking"
+                              : "Needs support"}
+                        </p>
+                        <p className="mt-1 font-black">{card.title}</p>
+                        <p className="mt-2 text-sm font-semibold leading-5">
+                          “{card.evidence}”
+                        </p>
+                        <p className="mt-3 border-l-4 border-black pl-3 text-sm font-black leading-5">
+                          {card.action}
+                        </p>
                       </div>
                     ))
-                  : reflections
-                      .filter((reflection) => reflection.completedAt)
-                      .slice(0, 4)
-                      .map((reflection) => (
-                        <div
-                          key={reflection.id}
-                          className="rounded-[20px] border-2 border-black bg-[#04c6c5] p-4"
-                        >
-                          <p className="font-black">{reflection.displayName}</p>
-                          <p className="mt-1 text-sm font-bold">
-                            {reflection.studentFeedback?.strongestMove ?? "Completed a reflection."}
-                          </p>
-                        </div>
-                      ))}
-                {alerts.length === 0 && reflections.filter((item) => item.completedAt).length === 0 ? (
+                  : null}
+                {priorityCards.length === 0 ? (
                   <p className="text-sm font-bold">Cards appear as students submit.</p>
                 ) : null}
               </div>

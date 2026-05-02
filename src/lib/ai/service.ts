@@ -2,6 +2,13 @@ import OpenAI from "openai";
 import type { ImagesResponse } from "openai/resources/images";
 import { zodTextFormat } from "openai/helpers/zod";
 import {
+  ExitTicketQuestionGeminiSchema,
+  ExitTicketTurnGeminiSchema,
+  generateGeminiStructured,
+  ReflectionAnalysisGeminiSchema,
+  StepAnalysisGeminiSchema,
+} from "./gemini";
+import {
   ExitTicketQuestionSchema,
   ExitTicketTurnAnalysisSchema,
   ReflectionAnalysisSchema,
@@ -15,16 +22,22 @@ import type { Reflection, Session } from "@/lib/models";
 import { getRoutineStep } from "@/lib/routines";
 import { classifyTranscriptSafety } from "@/lib/safety";
 import type { RoutineStepLabel, SafetyAlert } from "@/lib/types";
-import { hasOpenAIEnv } from "@/lib/server/env";
+import { hasGeminiEnv, hasOpenAIEnv } from "@/lib/server/env";
 
 const ANALYSIS_MODEL = process.env.OPENAI_ANALYSIS_MODEL ?? "gpt-5.4-mini";
 const TRANSCRIPTION_MODEL = process.env.OPENAI_TRANSCRIPTION_MODEL ?? "gpt-4o-transcribe";
 const MODERATION_MODEL = process.env.OPENAI_MODERATION_MODEL ?? "omni-moderation-latest";
 const IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-1.5";
+const GEMINI_ANALYSIS_MODEL = process.env.GEMINI_ANALYSIS_MODEL ?? "gemini-flash-latest";
 
 function getClient() {
   if (!hasOpenAIEnv()) return null;
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
+
+function getGeminiApiKey() {
+  if (!hasGeminiEnv()) return null;
+  return process.env.GEMINI_API_KEY ?? null;
 }
 
 export async function transcribeAudio(file: File) {
@@ -72,8 +85,34 @@ export async function analyzeStep(input: {
   label: RoutineStepLabel;
   transcript: string;
 }) {
-  const client = getClient();
   const step = getRoutineStep(labelToNumber(input.label));
+  const geminiApiKey = getGeminiApiKey();
+
+  if (geminiApiKey) {
+    try {
+      return await generateGeminiStructured({
+        apiKey: geminiApiKey,
+        model: GEMINI_ANALYSIS_MODEL,
+        system:
+          "You analyze grades 3-5 student reflection. Be warm, specific, rubric-aligned, and never shame the student.",
+        prompt: [
+          "Routine: See Think Wonder",
+          `Step: ${step.label}`,
+          `Step prompt: ${step.prompt}`,
+          `Learning target: ${input.session.learningTarget || "Not provided"}`,
+          `Student transcript: ${input.transcript}`,
+          "Score thinking depth from 1 surface to 4 transfer. Generate at most one follow-up question that stays inside this routine step.",
+          "Use an integer depthScore from 1 to 4.",
+        ].join("\n"),
+        schema: StepAnalysisGeminiSchema,
+        parse: StepAnalysisSchema.parse,
+      });
+    } catch (error) {
+      console.warn("Gemini step analysis failed, falling back.", error);
+    }
+  }
+
+  const client = getClient();
 
   if (!client) {
     return heuristicStepAnalysis(input.transcript, input.label);
@@ -108,6 +147,26 @@ export async function analyzeStep(input: {
 }
 
 export async function analyzeCompletedReflection(reflection: Reflection) {
+  const geminiApiKey = getGeminiApiKey();
+
+  if (geminiApiKey) {
+    try {
+      return await generateGeminiStructured({
+        apiKey: geminiApiKey,
+        model: GEMINI_ANALYSIS_MODEL,
+        system:
+          "You create concise student-facing feedback for grades 3-5 reflection. Feedback must be specific, encouraging, and include exactly one nudge.",
+        prompt: `Analyze this completed reflection:\n${reflection.steps
+          .map((step) => `${step.label}: ${step.transcription}`)
+          .join("\n")}\n\nUse integer overallDepthScore from 1 to 4.`,
+        schema: ReflectionAnalysisGeminiSchema,
+        parse: ReflectionAnalysisSchema.parse,
+      });
+    } catch (error) {
+      console.warn("Gemini reflection analysis failed, falling back.", error);
+    }
+  }
+
   const client = getClient();
 
   if (!client) {
@@ -225,6 +284,29 @@ export async function generateExitTicketQuestion(input: {
   gradeBand: string;
   lessonContext: string;
 }): Promise<ExitTicketQuestion> {
+  const geminiApiKey = getGeminiApiKey();
+
+  if (geminiApiKey) {
+    try {
+      return await generateGeminiStructured({
+        apiKey: geminiApiKey,
+        model: GEMINI_ANALYSIS_MODEL,
+        system:
+          "You write one reflection-forward exit ticket question for a teacher. It must be open-ended, grade-appropriate, and invite evidence or reasoning.",
+        prompt: [
+          `Subject: ${input.subject}`,
+          `Grade: ${input.gradeBand}`,
+          `What was taught: ${input.lessonContext}`,
+          "Return one question only, plus a short teacher-facing rationale.",
+        ].join("\n"),
+        schema: ExitTicketQuestionGeminiSchema,
+        parse: ExitTicketQuestionSchema.parse,
+      });
+    } catch (error) {
+      console.warn("Gemini exit ticket question failed, falling back.", error);
+    }
+  }
+
   const client = getClient();
 
   if (!client) {
@@ -265,15 +347,43 @@ export async function analyzeExitTicketTurn(input: {
   turnIndex: number;
   maxTurns: number;
 }): Promise<ExitTicketTurnAnalysis> {
+  const previous = input.reflection.steps
+    .map((step) => `${step.prompt ?? step.label}: ${step.transcription}`)
+    .join("\n");
+  const geminiApiKey = getGeminiApiKey();
+
+  if (geminiApiKey) {
+    try {
+      return await generateGeminiStructured({
+        apiKey: geminiApiKey,
+        model: GEMINI_ANALYSIS_MODEL,
+        system:
+          "You analyze one student reflection turn for a grades 3-5 teacher. Always quote the student's exact words, rate depth from 1 surface to 4 transfer, and generate one specific follow-up unless this is the final turn.",
+        prompt: [
+          `Exit ticket question: ${input.session.exitTicketQuestion}`,
+          `Lesson context: ${input.session.exitTicketContext || input.session.learningTarget}`,
+          `Current prompt: ${input.prompt}`,
+          `Student response: ${input.response}`,
+          `Previous conversation:\n${previous || "None"}`,
+          `Turn ${input.turnIndex + 1} of ${input.maxTurns}.`,
+          "Use an integer rating from 1 to 4.",
+          input.turnIndex >= input.maxTurns - 1
+            ? "This is the final turn. Set followUpQuestion to null."
+            : "Write the next follow-up question. It must include a direct quote from the student's current response.",
+        ].join("\n\n"),
+        schema: ExitTicketTurnGeminiSchema,
+        parse: ExitTicketTurnAnalysisSchema.parse,
+      });
+    } catch (error) {
+      console.warn("Gemini exit ticket turn failed, falling back.", error);
+    }
+  }
+
   const client = getClient();
 
   if (!client) {
     return heuristicExitTicketTurn(input);
   }
-
-  const previous = input.reflection.steps
-    .map((step) => `${step.prompt ?? step.label}: ${step.transcription}`)
-    .join("\n");
 
   const response = await client.responses.parse({
     model: ANALYSIS_MODEL,

@@ -1,9 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { signInWithPopup, signOut } from "firebase/auth";
-import { ArrowRight, MessageCircle, Play, Plus, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  ImagePlus,
+  MessageCircle,
+  Play,
+  Sparkles,
+} from "lucide-react";
 import { getFirebaseClientServices } from "@/lib/firebase/client";
 import type { Session } from "@/lib/models";
 
@@ -130,38 +137,48 @@ export default function TeacherPage() {
                 Sign out
               </button>
             ) : null}
-            <button
-              onClick={seedDemo}
-              disabled={!isTeacherSession}
-              className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white px-7 py-4 font-bold text-black transition hover:-translate-y-0.5"
-            >
-              <Play size={18} />
-              Seed demo
-            </button>
-            <Link
-              href="/teacher/new"
-              aria-disabled={!isTeacherSession}
-              onClick={(event) => {
-                if (!isTeacherSession) event.preventDefault();
-              }}
-              className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#fd4401] px-7 py-4 font-bold text-white transition hover:-translate-y-0.5"
-            >
-              <Plus size={18} />
-              New reflection
-            </Link>
-            <Link
-              href="/teacher/exit-ticket/new"
-              aria-disabled={!isTeacherSession}
-              onClick={(event) => {
-                if (!isTeacherSession) event.preventDefault();
-              }}
-              className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#006cff] px-7 py-4 font-bold text-white transition hover:-translate-y-0.5"
-            >
-              <MessageCircle size={18} />
-              Exit ticket
-            </Link>
           </div>
         </header>
+
+        {isTeacherSession ? (
+          <section className="mt-10 grid gap-5 lg:grid-cols-3">
+            <LaunchCard
+              href="/teacher/exit-ticket/new"
+              icon={<MessageCircle size={26} />}
+              title="Quick Reflection"
+              kicker="One question, three follow-ups"
+              body="Generate an exit ticket from the lesson you taught, approve it, and let AI ask quote-based follow-ups."
+              color="bg-[#006cff] text-white"
+            />
+            <LaunchCard
+              href="/teacher/new"
+              icon={<ImagePlus size={26} />}
+              title="See Think Wonder"
+              kicker="Image or stimulus routine"
+              body="Launch the visible thinking routine with an uploaded, linked, text, or AI-generated stimulus."
+              color="bg-[#fd4401] text-white"
+            />
+            <button
+              onClick={seedDemo}
+              disabled={!isTeacherSession || loading}
+              className="focus-ring rounded-[28px] border-2 border-black bg-white p-7 text-left transition hover:-translate-y-0.5 disabled:opacity-50"
+            >
+              <div className="grid size-14 place-items-center rounded-[18px] border-2 border-black bg-[#fff2b7]">
+                <Play size={26} />
+              </div>
+              <p className="mt-5 text-sm font-black uppercase tracking-[0.08em]">
+                Sample dashboard
+              </p>
+              <h2 className="display-type mt-2 text-4xl font-bold leading-none">
+                Demo Class
+              </h2>
+              <p className="mt-4 text-lg font-bold leading-7">
+                Fill a session with sample student thinking so you can preview the
+                live dashboard without a room full of students.
+              </p>
+            </button>
+          </section>
+        ) : null}
 
         <section className="mt-10 grid gap-4">
           {!isTeacherSession ? (
@@ -188,30 +205,68 @@ export default function TeacherPage() {
             <div className="panel p-10">
               <p className="display-type text-4xl font-bold">No sessions yet</p>
               <p className="mt-3 max-w-xl text-xl font-semibold leading-7">
-                Create a See Think Wonder reflection or seed a demo session with
-                sample student thinking.
+                Start with Quick Reflection for the fastest classroom loop, or
+                use Demo Class to see the dashboard already filled in.
               </p>
             </div>
           ) : (
-            sessions.map((session) => (
-              <Link
-                key={session.id}
-                href={`/teacher/session/${session.id}/live`}
-                className="panel flex flex-wrap items-center justify-between gap-4 p-7 transition hover:-translate-y-0.5 hover:bg-[#fff2b7]"
-              >
-                <div>
-                  <p className="display-type text-4xl font-bold">{session.title}</p>
-                  <p className="mt-2 text-lg font-bold">
-                    {session.doneCount} done · {session.joinedCount} joined · Code{" "}
-                    {session.joinCode}
-                  </p>
-                </div>
-                <ArrowRight className="text-[#006cff]" />
-              </Link>
-            ))
+            <>
+              <h2 className="display-type text-4xl font-bold">Recent sessions</h2>
+              {sessions.map((session) => (
+                <Link
+                  key={session.id}
+                  href={`/teacher/session/${session.id}/live`}
+                  className="panel flex flex-wrap items-center justify-between gap-4 p-7 transition hover:-translate-y-0.5 hover:bg-[#fff2b7]"
+                >
+                  <div>
+                    <p className="display-type text-4xl font-bold">{session.title}</p>
+                    <p className="mt-2 text-lg font-bold">
+                      {session.doneCount} done · {session.joinedCount} joined · Code{" "}
+                      {session.joinCode}
+                    </p>
+                  </div>
+                  <ArrowRight className="text-[#006cff]" />
+                </Link>
+              ))}
+            </>
           )}
         </section>
       </div>
     </main>
+  );
+}
+
+function LaunchCard({
+  href,
+  icon,
+  title,
+  kicker,
+  body,
+  color,
+}: {
+  href: string;
+  icon: ReactNode;
+  title: string;
+  kicker: string;
+  body: string;
+  color: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`focus-ring rounded-[28px] border-2 border-black p-7 transition hover:-translate-y-0.5 ${color}`}
+    >
+      <div className="grid size-14 place-items-center rounded-[18px] border-2 border-black bg-white text-black">
+        {icon}
+      </div>
+      <p className="mt-5 text-sm font-black uppercase tracking-[0.08em]">
+        {kicker}
+      </p>
+      <h2 className="display-type mt-2 text-4xl font-bold leading-none">{title}</h2>
+      <p className="mt-4 text-lg font-bold leading-7">{body}</p>
+      <span className="mt-6 inline-flex items-center gap-2 rounded-full border-2 border-black bg-white px-5 py-3 text-sm font-black text-black">
+        Launch <ArrowRight size={16} />
+      </span>
+    </Link>
   );
 }

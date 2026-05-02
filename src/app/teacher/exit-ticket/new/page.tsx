@@ -4,17 +4,30 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowLeft, Check, Sparkles, Wand2 } from "lucide-react";
+import {
+  GRADE_OPTIONS,
+  resolveTeacherOption,
+  SUBJECT_OPTIONS,
+} from "@/lib/teacher-options";
 
 export default function NewExitTicketPage() {
   const router = useRouter();
-  const [subject, setSubject] = useState("Math");
-  const [gradeBand, setGradeBand] = useState("Grade 4");
+  const [selectedSubject, setSelectedSubject] = useState("General Education");
+  const [customSubject, setCustomSubject] = useState("");
+  const [selectedGrade, setSelectedGrade] = useState("Grade 4");
+  const [customGrade, setCustomGrade] = useState("");
   const [lessonContext, setLessonContext] = useState("");
   const [question, setQuestion] = useState("");
   const [rationale, setRationale] = useState("");
   const [loadingDraft, setLoadingDraft] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [error, setError] = useState("");
+  const subject = resolveTeacherOption(
+    selectedSubject,
+    customSubject,
+    "General Education",
+  );
+  const gradeBand = resolveTeacherOption(selectedGrade, customGrade, "Grade 4");
 
   async function generateQuestion() {
     setError("");
@@ -99,23 +112,84 @@ export default function NewExitTicketPage() {
                 <span className="text-sm font-black uppercase tracking-[0.08em]">
                   Subject
                 </span>
-                <input
-                  value={subject}
-                  onChange={(event) => setSubject(event.target.value)}
+                <select
+                  value={selectedSubject}
+                  onChange={(event) => {
+                    setSelectedSubject(event.target.value);
+                    setQuestion("");
+                    setRationale("");
+                  }}
                   className="focus-ring rounded-[24px] border-2 border-black bg-[#fff2b7] px-5 py-4 text-xl font-black"
-                />
+                >
+                  {SUBJECT_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="grid gap-2">
                 <span className="text-sm font-black uppercase tracking-[0.08em]">
                   Grade
                 </span>
-                <input
-                  value={gradeBand}
-                  onChange={(event) => setGradeBand(event.target.value)}
+                <select
+                  value={selectedGrade}
+                  onChange={(event) => {
+                    setSelectedGrade(event.target.value);
+                    setQuestion("");
+                    setRationale("");
+                  }}
                   className="focus-ring rounded-[24px] border-2 border-black bg-white px-5 py-4 text-xl font-black"
-                />
+                >
+                  {GRADE_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
               </label>
             </div>
+
+            {(selectedSubject === "Other" || selectedGrade === "Other") ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                {selectedSubject === "Other" ? (
+                  <label className="grid gap-2">
+                    <span className="text-sm font-black uppercase tracking-[0.08em]">
+                      Type subject
+                    </span>
+                    <input
+                      value={customSubject}
+                      onChange={(event) => {
+                        setCustomSubject(event.target.value);
+                        setQuestion("");
+                        setRationale("");
+                      }}
+                      placeholder="Example: Engineering"
+                      className="focus-ring rounded-[24px] border-2 border-black bg-[#fff2b7] px-5 py-4 text-xl font-black placeholder:text-black/40"
+                    />
+                  </label>
+                ) : (
+                  <div />
+                )}
+                {selectedGrade === "Other" ? (
+                  <label className="grid gap-2">
+                    <span className="text-sm font-black uppercase tracking-[0.08em]">
+                      Type grade
+                    </span>
+                    <input
+                      value={customGrade}
+                      onChange={(event) => {
+                        setCustomGrade(event.target.value);
+                        setQuestion("");
+                        setRationale("");
+                      }}
+                      placeholder="Example: Grade 2"
+                      className="focus-ring rounded-[24px] border-2 border-black bg-white px-5 py-4 text-xl font-black placeholder:text-black/40"
+                    />
+                  </label>
+                ) : null}
+              </div>
+            ) : null}
 
             <label className="grid gap-2">
               <span className="text-sm font-black uppercase tracking-[0.08em]">
