@@ -115,40 +115,44 @@ export default function LiveDashboard({ sessionId }: { sessionId: string }) {
             Sign out
           </button>
         </div>
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-black pb-5">
-          <div>
-            <Link
-              href="/teacher"
-              className="focus-ring inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold"
-            >
-              <ArrowLeft size={16} />
-              Sessions
-            </Link>
-            <h1 className="display-type mt-4 text-5xl font-bold leading-[0.9]">
-              {session.title}
-            </h1>
-            <p className="mt-2 max-w-2xl text-xl font-semibold">
-              {session.learningTarget || "No learning target set"}
-            </p>
-          </div>
-          <div className="flex items-center gap-4 rounded-[24px] border-2 border-black bg-white p-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            {qr ? <img src={qr} alt="Student join QR code" className="size-32" /> : null}
+        {session.routineId === "would-you-rather" ? (
+          <WyrScoreboard session={session} reflections={reflections} qr={qr} copyShare={copyShare} shareUrl={shareUrl} copied={copied} />
+        ) : (
+          <header className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-black pb-5">
             <div>
-              <p className="text-sm font-black uppercase tracking-[0.08em]">Join code</p>
-              <p className="display-type text-5xl font-bold tracking-[0.12em]">
-                {session.joinCode}
-              </p>
-              <button
-                onClick={() => copyShare(shareUrl, "link")}
-                className="focus-ring mt-2 inline-flex items-center gap-2 rounded-full text-sm font-bold text-[#006cff]"
+              <Link
+                href="/teacher"
+                className="focus-ring inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold"
               >
-                <ClipboardCopy size={14} />
-                {copied === "link" ? "Copied" : "Copy link"}
-              </button>
+                <ArrowLeft size={16} />
+                Sessions
+              </Link>
+              <h1 className="display-type mt-4 text-5xl font-bold leading-[0.9]">
+                {session.title}
+              </h1>
+              <p className="mt-2 max-w-2xl text-xl font-semibold">
+                {session.learningTarget || "No learning target set"}
+              </p>
             </div>
-          </div>
-        </header>
+            <div className="flex items-center gap-4 rounded-[24px] border-2 border-black bg-white p-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {qr ? <img src={qr} alt="Student join QR code" className="size-32" /> : null}
+              <div>
+                <p className="text-sm font-black uppercase tracking-[0.08em]">Join code</p>
+                <p className="display-type text-5xl font-bold tracking-[0.12em]">
+                  {session.joinCode}
+                </p>
+                <button
+                  onClick={() => copyShare(shareUrl, "link")}
+                  className="focus-ring mt-2 inline-flex items-center gap-2 rounded-full text-sm font-bold text-[#006cff]"
+                >
+                  <ClipboardCopy size={14} />
+                  {copied === "link" ? "Copied" : "Copy link"}
+                </button>
+              </div>
+            </div>
+          </header>
+        )}
 
         <div className="mt-5 grid gap-5 xl:grid-cols-[320px_1fr_360px]">
           <aside className="space-y-5">
@@ -494,6 +498,63 @@ function Rating({ rating }: { rating: number }) {
           }`}
         />
       ))}
+    </div>
+  );
+}
+
+function WyrScoreboard({ session, reflections, qr, copyShare, shareUrl, copied }: any) {
+  const opts = session.wyrOptions;
+  let countA = 0;
+  let countB = 0;
+  reflections.forEach((r: any) => {
+    const choice = r.steps[0]?.transcription;
+    if (choice?.startsWith("Option A")) countA++;
+    else if (choice?.startsWith("Option B")) countB++;
+  });
+  const total = countA + countB;
+  const pctA = total === 0 ? 0 : Math.round((countA / total) * 100);
+  const pctB = total === 0 ? 0 : Math.round((countB / total) * 100);
+
+  return (
+    <div className="mb-5 flex flex-col gap-4">
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-black pb-5">
+        <div>
+          <Link href="/teacher" className="focus-ring inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold"><ArrowLeft size={16} />Sessions</Link>
+          <h1 className="display-type mt-4 text-5xl font-bold leading-[0.9]">{session.title}</h1>
+        </div>
+        <div className="flex items-center gap-4 rounded-[24px] border-2 border-black bg-white p-3">
+          {qr && <img src={qr} alt="QR code" className="size-32" />}
+          <div>
+            <p className="text-sm font-black uppercase tracking-[0.08em]">Join code</p>
+            <p className="display-type text-5xl font-bold tracking-[0.12em]">{session.joinCode}</p>
+            <button
+              onClick={() => copyShare(shareUrl, "link")}
+              className="focus-ring mt-2 inline-flex items-center gap-2 rounded-full text-sm font-bold text-[#006cff]"
+            >
+              <ClipboardCopy size={14} />
+              {copied === "link" ? "Copied" : "Copy link"}
+            </button>
+          </div>
+        </div>
+      </header>
+      <div className="grid md:grid-cols-2 gap-0 border-4 border-black rounded-[3rem] overflow-hidden shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
+        <div className="bg-[#04c6c5] p-10 flex flex-col items-center justify-center text-center relative border-b-4 md:border-b-0 md:border-r-4 border-black min-h-[300px]">
+          <span className="text-2xl font-black uppercase tracking-widest text-black/50 mb-2">Option A</span>
+          <p className="display-type text-4xl sm:text-5xl font-bold mb-6">{opts?.optionA}</p>
+          <div className="mt-auto">
+            <span className="display-type text-8xl font-bold leading-none">{pctA}%</span>
+            <p className="font-black text-2xl uppercase tracking-widest text-black/70 mt-2">{countA} votes</p>
+          </div>
+        </div>
+        <div className="bg-[#9b51e0] text-white p-10 flex flex-col items-center justify-center text-center relative min-h-[300px]">
+          <span className="text-2xl font-black uppercase tracking-widest text-white/50 mb-2">Option B</span>
+          <p className="display-type text-4xl sm:text-5xl font-bold mb-6">{opts?.optionB}</p>
+          <div className="mt-auto">
+            <span className="display-type text-8xl font-bold leading-none">{pctB}%</span>
+            <p className="font-black text-2xl uppercase tracking-widest text-white/70 mt-2">{countB} votes</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

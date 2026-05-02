@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { generateGeminiStructured } from "@/lib/ai/gemini";
-import { getEnv } from "@/lib/server/env";
 import { badRequest, ok, serverError } from "@/lib/server/http";
 import type { GeminiSchema } from "@/lib/ai/gemini";
 
@@ -36,12 +35,12 @@ export async function POST(request: Request) {
     const body = await request.json();
     const result = GenerateWyrRequestSchema.safeParse(body);
     if (!result.success) {
-      return badRequest("Invalid request body.", result.error);
+      return badRequest("Invalid request body.");
     }
     const { gradeLevel, subject, topic } = result.data;
     
-    const env = getEnv();
-    if (!env.GEMINI_API_KEY) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
       return serverError("Missing Gemini API key.");
     }
 
@@ -60,7 +59,7 @@ Guidelines for the 3 questions:
 Keep the wording simple enough for the specified grade level. Format your response strictly as a JSON object matching the provided schema.`;
 
     const data = await generateGeminiStructured({
-      apiKey: env.GEMINI_API_KEY,
+      apiKey: apiKey,
       model: "gemini-2.5-flash",
       system: systemPrompt,
       prompt: "Generate the questions.",
