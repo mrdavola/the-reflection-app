@@ -16,7 +16,7 @@ export type Stimulus = {
 export type Session = {
   id: string;
   teacherId: string;
-  routineId: "see-think-wonder" | "exit-ticket-conversation";
+  routineId: "see-think-wonder" | "exit-ticket-conversation" | "quick-spin";
   title: string;
   learningTarget: string;
   gradeBand?: string;

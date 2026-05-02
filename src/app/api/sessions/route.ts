@@ -7,7 +7,7 @@ const CreateSessionSchema = z.object({
   title: z.string().optional(),
   learningTarget: z.string().optional(),
   gradeBand: z.string().optional(),
-  routineId: z.enum(["see-think-wonder", "exit-ticket-conversation"]).optional(),
+  routineId: z.enum(["see-think-wonder", "exit-ticket-conversation", "quick-spin"]).optional(),
   exitTicketQuestion: z.string().optional(),
   exitTicketContext: z.string().optional(),
   exitTicketMaxTurns: z.number().int().min(2).max(5).optional(),
