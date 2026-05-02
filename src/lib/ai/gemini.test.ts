@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildGeminiStructuredBody, extractGeminiText } from "./gemini";
+import {
+  buildGeminiStructuredBody,
+  extractGeminiImage,
+  extractGeminiText,
+} from "./gemini";
 
 describe("Gemini API helpers", () => {
   it("builds a structured JSON generateContent request", () => {
@@ -33,5 +37,26 @@ describe("Gemini API helpers", () => {
         ],
       }),
     ).toBe("{\"question\":\"What changed?\"}");
+  });
+
+  it("extracts inline image data from Gemini candidates", () => {
+    expect(
+      extractGeminiImage({
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  inlineData: {
+                    mimeType: "image/png",
+                    data: "abc123",
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    ).toEqual({ mimeType: "image/png", data: "abc123" });
   });
 });

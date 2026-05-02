@@ -1,11 +1,12 @@
-import OpenAI from "openai";
-import type { ImagesResponse } from "openai/resources/images";
-import { zodTextFormat } from "openai/helpers/zod";
+import { z } from "zod";
 import {
   ExitTicketQuestionGeminiSchema,
   ExitTicketTurnGeminiSchema,
+  generateGeminiImage,
   generateGeminiStructured,
+  generateGeminiText,
   ReflectionAnalysisGeminiSchema,
+  SafetyAlertsGeminiSchema,
   StepAnalysisGeminiSchema,
 } from "./gemini";
 import {
@@ -22,18 +23,12 @@ import type { Reflection, Session } from "@/lib/models";
 import { getRoutineStep } from "@/lib/routines";
 import { classifyTranscriptSafety } from "@/lib/safety";
 import type { RoutineStepLabel, SafetyAlert } from "@/lib/types";
-import { hasGeminiEnv, hasOpenAIEnv } from "@/lib/server/env";
+import { hasGeminiEnv } from "@/lib/server/env";
 
-const ANALYSIS_MODEL = process.env.OPENAI_ANALYSIS_MODEL ?? "gpt-5.4-mini";
-const TRANSCRIPTION_MODEL = process.env.OPENAI_TRANSCRIPTION_MODEL ?? "gpt-4o-transcribe";
-const MODERATION_MODEL = process.env.OPENAI_MODERATION_MODEL ?? "omni-moderation-latest";
-const IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-1.5";
 const GEMINI_ANALYSIS_MODEL = process.env.GEMINI_ANALYSIS_MODEL ?? "gemini-flash-latest";
-
-function getClient() {
-  if (!hasOpenAIEnv()) return null;
-  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-}
+const GEMINI_TRANSCRIPTION_MODEL =
+  process.env.GEMINI_TRANSCRIPTION_MODEL ?? GEMINI_ANALYSIS_MODEL;
+const GEMINI_IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL ?? "gemini-2.5-flash-image";
 
 function getGeminiApiKey() {
   if (!hasGeminiEnv()) return null;
@@ -41,40 +36,71 @@ function getGeminiApiKey() {
 }
 
 export async function transcribeAudio(file: File) {
-  const client = getClient();
-
-  if (!client) {
+  const geminiApiKey = getGeminiApiKey();
+  if (!geminiApiKey) {
     return "I see important details, I think they connect to the lesson, and I wonder what evidence would help us learn more.";
   }
 
-  const transcription = await client.audio.transcriptions.create({
-    file,
-    model: TRANSCRIPTION_MODEL,
-  });
-
-  return transcription.text;
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const transcript = await generateGeminiText({
+      apiKey: geminiApiKey,
+      model: GEMINI_TRANSCRIPTION_MODEL,
+      system:
+        "You transcribe student classroom audio. Return only the student's spoken words as plain text. Do not summarize or add labels.",
+      parts: [
+        {
+          inline_data: {
+            mime_type: file.type || "audio/webm",
+            data: buffer.toString("base64"),
+          },
+        },
+        { text: "Generate a transcript of the speech." },
+      ],
+    });
+    return transcript;
+  } catch (error) {
+    console.warn("Gemini transcription failed, falling back.", error);
+    return "I see important details, I think they connect to the lesson, and I wonder what evidence would help us learn more.";
+  }
 }
 
 export async function moderateTranscript(transcript: string) {
   const heuristic = classifyTranscriptSafety(transcript);
   const alerts: SafetyAlert[] = heuristic ? [heuristic] : [];
-  const client = getClient();
+  const geminiApiKey = getGeminiApiKey();
 
-  if (!client) return alerts;
+  if (!geminiApiKey) return alerts;
 
-  const result = await client.moderations.create({
-    model: MODERATION_MODEL,
-    input: transcript,
-  });
-  const flagged = result.results[0]?.flagged;
-
-  if (flagged && !alerts.some((alert) => alert.severity === "red")) {
-    alerts.push({
-      severity: "red",
-      category: "personal_safety",
-      title: "OpenAI moderation flag",
-      message: "Review the transcript and recording before taking action.",
+  try {
+    const geminiResult = await generateGeminiStructured({
+      apiKey: geminiApiKey,
+      model: GEMINI_ANALYSIS_MODEL,
+      system:
+        "You classify student reflection transcripts for teacher review. Only create alerts for personal safety, self-harm, abuse, violence, threats, profanity, unusually negative tone, or very low engagement. Do not punish students. When in doubt, return no alerts.",
+      prompt: `Student transcript:\n${transcript}`,
+      schema: SafetyAlertsGeminiSchema,
+      parse: SafetyAlertsSchema.parse,
     });
+    for (const alert of geminiResult.alerts) {
+      if (
+        !alerts.some(
+          (existing) =>
+            existing.severity === alert.severity &&
+            existing.category === alert.category,
+        )
+      ) {
+        alerts.push({
+          severity: alert.severity,
+          category: alert.category,
+          title: alert.title,
+          message: alert.message,
+          matchedText: alert.matchedText ?? undefined,
+        });
+      }
+    }
+  } catch (error) {
+    console.warn("Gemini safety classification failed, using heuristic alerts.", error);
   }
 
   return alerts;
@@ -112,38 +138,7 @@ export async function analyzeStep(input: {
     }
   }
 
-  const client = getClient();
-
-  if (!client) {
-    return heuristicStepAnalysis(input.transcript, input.label);
-  }
-
-  const response = await client.responses.parse({
-    model: ANALYSIS_MODEL,
-    input: [
-      {
-        role: "system",
-        content:
-          "You analyze grades 3-5 student reflection. Be warm, specific, rubric-aligned, and never shame the student.",
-      },
-      {
-        role: "user",
-        content: [
-          `Routine: See Think Wonder`,
-          `Step: ${step.label}`,
-          `Step prompt: ${step.prompt}`,
-          `Learning target: ${input.session.learningTarget || "Not provided"}`,
-          `Student transcript: ${input.transcript}`,
-          "Score thinking depth from 1 surface to 4 transfer. Generate at most one follow-up question that stays inside this routine step.",
-        ].join("\n"),
-      },
-    ],
-    text: {
-      format: zodTextFormat(StepAnalysisSchema, "step_analysis"),
-    },
-  });
-
-  return response.output_parsed ?? heuristicStepAnalysis(input.transcript, input.label);
+  return heuristicStepAnalysis(input.transcript, input.label);
 }
 
 export async function analyzeCompletedReflection(reflection: Reflection) {
@@ -167,57 +162,29 @@ export async function analyzeCompletedReflection(reflection: Reflection) {
     }
   }
 
-  const client = getClient();
-
-  if (!client) {
-    return heuristicReflectionAnalysis(reflection);
-  }
-
-  const response = await client.responses.parse({
-    model: ANALYSIS_MODEL,
-    input: [
-      {
-        role: "system",
-        content:
-          "You create concise student-facing feedback for grades 3-5 reflection. Feedback must be specific, encouraging, and include exactly one nudge.",
-      },
-      {
-        role: "user",
-        content: `Analyze this completed See Think Wonder reflection:\n${reflection.steps
-          .map((step) => `${step.label}: ${step.transcription}`)
-          .join("\n")}`,
-      },
-    ],
-    text: {
-      format: zodTextFormat(ReflectionAnalysisSchema, "reflection_analysis"),
-    },
-  });
-
-  return response.output_parsed ?? heuristicReflectionAnalysis(reflection);
+  return heuristicReflectionAnalysis(reflection);
 }
 
 export async function generateSessionSummary(input: {
   session: Session;
   reflections: Reflection[];
 }) {
-  const client = getClient();
+  const geminiApiKey = getGeminiApiKey();
   const completed = input.reflections.filter((reflection) => reflection.completedAt);
 
-  if (!client) {
+  if (!geminiApiKey) {
     return heuristicClassSummary(completed);
   }
 
-  const response = await client.responses.create({
-    model: ANALYSIS_MODEL,
-    input: [
-      {
-        role: "system",
-        content:
-          "Summarize class thinking for a teacher. Paragraph 1: what students are thinking. Paragraph 2: what the teacher should do next.",
-      },
-      {
-        role: "user",
-        content: [
+  try {
+    return await generateGeminiText({
+      apiKey: geminiApiKey,
+      model: GEMINI_ANALYSIS_MODEL,
+      system:
+        "Summarize class thinking for a teacher. Paragraph 1: what students are thinking. Paragraph 2: what the teacher should do next. Be specific and actionable.",
+      parts: [
+        {
+          text: [
           `Learning target: ${input.session.learningTarget || "Not provided"}`,
           `Thinking map: ${JSON.stringify(input.session.classThinkingMap)}`,
           `Student responses: ${completed
@@ -227,19 +194,21 @@ export async function generateSessionSummary(input: {
                 .join(" | ")}`,
             )
             .join("\n")}`,
-        ].join("\n\n"),
-      },
-    ],
-  });
-
-  return response.output_text || heuristicClassSummary(completed);
+          ].join("\n\n"),
+        },
+      ],
+    });
+  } catch (error) {
+    console.warn("Gemini class summary failed, falling back.", error);
+    return heuristicClassSummary(completed);
+  }
 }
 
 export async function generateStimulusImage(input: {
   prompt: string;
   learningTarget?: string;
 }) {
-  const client = getClient();
+  const geminiApiKey = getGeminiApiKey();
   const prompt = [
     "Create a classroom-safe image for a grades 3-5 See Think Wonder routine.",
     "The image should be visually rich enough for observation, interpretation, and curiosity.",
@@ -250,7 +219,7 @@ export async function generateStimulusImage(input: {
     .filter(Boolean)
     .join("\n");
 
-  if (!client) {
+  if (!geminiApiKey) {
     return {
       dataUrl: fallbackStimulusDataUrl(input.prompt),
       revisedPrompt: prompt,
@@ -258,25 +227,26 @@ export async function generateStimulusImage(input: {
     };
   }
 
-  const response = await client.images.generate({
-    model: IMAGE_MODEL,
-    prompt,
-    size: "1536x1024",
-    quality: "medium",
-    n: 1,
-  } as Parameters<typeof client.images.generate>[0]);
+  try {
+    const image = await generateGeminiImage({
+      apiKey: geminiApiKey,
+      model: GEMINI_IMAGE_MODEL,
+      prompt,
+    });
 
-  const imageResponse = response as ImagesResponse;
-  const image = imageResponse.data?.[0];
-  if (!image?.b64_json) {
-    throw new Error("OpenAI did not return image data.");
+    return {
+      dataUrl: `data:${image.mimeType};base64,${image.data}`,
+      revisedPrompt: prompt,
+      model: GEMINI_IMAGE_MODEL,
+    };
+  } catch (error) {
+    console.warn("Gemini image generation failed, falling back.", error);
+    return {
+      dataUrl: fallbackStimulusDataUrl(input.prompt),
+      revisedPrompt: prompt,
+      model: "local-fallback",
+    };
   }
-
-  return {
-    dataUrl: `data:image/png;base64,${image.b64_json}`,
-    revisedPrompt: image.revised_prompt ?? prompt,
-    model: IMAGE_MODEL,
-  };
 }
 
 export async function generateExitTicketQuestion(input: {
@@ -307,36 +277,7 @@ export async function generateExitTicketQuestion(input: {
     }
   }
 
-  const client = getClient();
-
-  if (!client) {
-    return heuristicExitTicketQuestion(input);
-  }
-
-  const response = await client.responses.parse({
-    model: ANALYSIS_MODEL,
-    input: [
-      {
-        role: "system",
-        content:
-          "You write one reflection-forward exit ticket question for a teacher. It must be open-ended, grade-appropriate, and invite evidence or reasoning.",
-      },
-      {
-        role: "user",
-        content: [
-          `Subject: ${input.subject}`,
-          `Grade: ${input.gradeBand}`,
-          `What was taught: ${input.lessonContext}`,
-          "Return one question only, plus a short teacher-facing rationale.",
-        ].join("\n"),
-      },
-    ],
-    text: {
-      format: zodTextFormat(ExitTicketQuestionSchema, "exit_ticket_question"),
-    },
-  });
-
-  return response.output_parsed ?? heuristicExitTicketQuestion(input);
+  return heuristicExitTicketQuestion(input);
 }
 
 export async function analyzeExitTicketTurn(input: {
@@ -379,42 +320,29 @@ export async function analyzeExitTicketTurn(input: {
     }
   }
 
-  const client = getClient();
-
-  if (!client) {
-    return heuristicExitTicketTurn(input);
-  }
-
-  const response = await client.responses.parse({
-    model: ANALYSIS_MODEL,
-    input: [
-      {
-        role: "system",
-        content:
-          "You analyze one student reflection turn for a grades 3-5 teacher. Always quote the student's exact words, rate depth from 1 surface to 4 transfer, and generate one specific follow-up unless this is the final turn.",
-      },
-      {
-        role: "user",
-        content: [
-          `Exit ticket question: ${input.session.exitTicketQuestion}`,
-          `Lesson context: ${input.session.exitTicketContext || input.session.learningTarget}`,
-          `Current prompt: ${input.prompt}`,
-          `Student response: ${input.response}`,
-          `Previous conversation:\n${previous || "None"}`,
-          `Turn ${input.turnIndex + 1} of ${input.maxTurns}.`,
-          input.turnIndex >= input.maxTurns - 1
-            ? "This is the final turn. Set followUpQuestion to null."
-            : "Write the next follow-up question. It must include a direct quote from the student's current response.",
-        ].join("\n\n"),
-      },
-    ],
-    text: {
-      format: zodTextFormat(ExitTicketTurnAnalysisSchema, "exit_ticket_turn_analysis"),
-    },
-  });
-
-  return response.output_parsed ?? heuristicExitTicketTurn(input);
+  return heuristicExitTicketTurn(input);
 }
+
+const SafetyAlertsSchema = z.object({
+  alerts: z.array(
+    z.object({
+      severity: z.enum(["amber", "red"]),
+      category: z.enum([
+        "personal_safety",
+        "self_harm",
+        "violence",
+        "abuse",
+        "threat",
+        "profanity",
+        "low_depth",
+        "negative_tone",
+      ]),
+      title: z.string().min(1),
+      message: z.string().min(1),
+      matchedText: z.string().nullable().optional(),
+    }),
+  ),
+});
 
 function heuristicStepAnalysis(transcript: string, label: RoutineStepLabel): StepAnalysis {
   const words = transcript.split(/\s+/).filter(Boolean).length;

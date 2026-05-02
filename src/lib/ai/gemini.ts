@@ -15,6 +15,9 @@ type GeminiStructuredBodyInput = {
   prompt: string;
   schema: GeminiSchema;
 };
+type GeminiPart =
+  | { text: string }
+  | { inline_data: { mime_type: string; data: string } };
 
 export function buildGeminiStructuredBody(input: GeminiStructuredBodyInput) {
   return {
@@ -47,6 +50,97 @@ export function extractGeminiText(response: unknown) {
   }
 
   return text;
+}
+
+export function extractGeminiImage(response: unknown) {
+  const parsed = GeminiGenerateContentResponseSchema.parse(response);
+  const image = parsed.candidates
+    .flatMap((candidate) => candidate.content?.parts ?? [])
+    .map((part) => part.inlineData ?? part.inline_data)
+    .find((inlineData) => inlineData?.data);
+
+  if (!image?.data) {
+    throw new Error("Gemini did not return image data.");
+  }
+
+  const imagePayload = image as {
+    mimeType?: string;
+    mime_type?: string;
+    data: string;
+  };
+
+  return {
+    data: image.data,
+    mimeType: imagePayload.mimeType ?? imagePayload.mime_type ?? "image/png",
+  };
+}
+
+export async function generateGeminiText(input: {
+  apiKey: string;
+  model: string;
+  parts: GeminiPart[];
+  system?: string;
+}) {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${input.model}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-goog-api-key": input.apiKey,
+      },
+      body: JSON.stringify({
+        systemInstruction: input.system
+          ? { parts: [{ text: input.system }] }
+          : undefined,
+        contents: [{ role: "user", parts: input.parts }],
+      }),
+    },
+  );
+
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(
+      `Gemini request failed: ${payload.error?.message ?? response.statusText}`,
+    );
+  }
+
+  return extractGeminiText(payload);
+}
+
+export async function generateGeminiImage(input: {
+  apiKey: string;
+  model: string;
+  prompt: string;
+}) {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${input.model}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-goog-api-key": input.apiKey,
+      },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: input.prompt }] }],
+        generationConfig: {
+          responseModalities: ["Image"],
+          imageConfig: {
+            aspectRatio: "3:2",
+          },
+        },
+      }),
+    },
+  );
+
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(
+      `Gemini image request failed: ${payload.error?.message ?? response.statusText}`,
+    );
+  }
+
+  return extractGeminiImage(payload);
 }
 
 export async function generateGeminiStructured<T>(input: {
@@ -197,13 +291,70 @@ export const ReflectionAnalysisGeminiSchema = {
   ],
 } satisfies GeminiSchema;
 
+export const SafetyAlertsGeminiSchema = {
+  type: "object",
+  properties: {
+    alerts: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          severity: { type: "string", enum: ["amber", "red"] },
+          category: {
+            type: "string",
+            enum: [
+              "personal_safety",
+              "self_harm",
+              "violence",
+              "abuse",
+              "threat",
+              "profanity",
+              "low_depth",
+              "negative_tone",
+            ],
+          },
+          title: { type: "string" },
+          message: { type: "string" },
+          matchedText: { type: "string", nullable: true },
+        },
+        required: ["severity", "category", "title", "message", "matchedText"],
+        propertyOrdering: [
+          "severity",
+          "category",
+          "title",
+          "message",
+          "matchedText",
+        ],
+      },
+    },
+  },
+  required: ["alerts"],
+  propertyOrdering: ["alerts"],
+} satisfies GeminiSchema;
+
 const GeminiGenerateContentResponseSchema = z.object({
   candidates: z
     .array(
       z.object({
         content: z
           .object({
-            parts: z.array(z.object({ text: z.string().optional() })),
+            parts: z.array(
+              z.object({
+                text: z.string().optional(),
+                inlineData: z
+                  .object({
+                    mimeType: z.string().optional(),
+                    data: z.string().optional(),
+                  })
+                  .optional(),
+                inline_data: z
+                  .object({
+                    mime_type: z.string().optional(),
+                    data: z.string().optional(),
+                  })
+                  .optional(),
+              }),
+            ),
           })
           .optional(),
       }),

@@ -14,10 +14,6 @@ export function hasFirebaseAdminEnv() {
   );
 }
 
-export function hasOpenAIEnv() {
-  return Boolean(process.env.OPENAI_API_KEY);
-}
-
 export function hasGeminiEnv() {
   return Boolean(process.env.GEMINI_API_KEY);
 }
