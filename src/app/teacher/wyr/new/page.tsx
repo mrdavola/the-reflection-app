@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Sparkles, Zap } from "lucide-react";
+import { ArrowLeft, Check, Sparkles, Zap } from "lucide-react";
 
 const GRADES = ["K-2", "3-5", "6-8", "9-12"];
 const SUBJECTS = ["Math", "ELA", "Science", "Social Studies", "SEL"];
@@ -71,85 +71,146 @@ export default function WyrSetupPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 px-5 py-6 md:px-8">
-      <div className="mx-auto w-full max-w-7xl">
+    <main className="min-h-screen bg-[#fdcb40] px-5 py-6 text-black md:px-8">
+      <div className="mx-auto max-w-7xl">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <Link
             href="/teacher"
-            className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100 shadow-sm"
+            className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white px-5 py-3 text-sm font-bold text-black transition hover:-translate-y-0.5"
           >
             <ArrowLeft size={16} />
             Dashboard
           </Link>
-          <div className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-purple-500" />
-            <h1 className="text-xs font-black tracking-[0.4em] uppercase text-slate-400 hidden sm:block">
-              Classroom Reasoner
-            </h1>
-          </div>
+          <button
+            onClick={async () => {
+              const { getFirebaseClientServices } = await import("@/lib/firebase/client");
+              const { signOut } = await import("firebase/auth");
+              const { auth } = getFirebaseClientServices();
+              if (auth) {
+                await signOut(auth);
+              }
+              await fetch("/api/auth/logout", { method: "POST" });
+              router.push("/teacher");
+            }}
+            className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white px-5 py-2 text-sm font-bold text-black transition hover:-translate-y-0.5"
+          >
+            Sign out
+          </button>
         </header>
 
-        <section className="flex-grow flex flex-col items-center justify-center max-w-4xl mx-auto w-full gap-10 mt-16 pb-12">
-          {!options ? (
-            <div className="w-full bg-white rounded-[3.5rem] p-10 sm:p-16 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.05)] border border-slate-100">
-              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 mb-8 text-center">Quick-Fire Lesson Starter</h2>
-              <form onSubmit={generateOptions} className="grid gap-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <label className="block">
-                    <span className="text-sm font-bold text-slate-500">Grade Level</span>
-                    <select value={grade} onChange={e => setGrade(e.target.value)} className="mt-1 w-full bg-slate-50 border border-slate-200 p-3 rounded-xl font-bold">
-                      {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
-                    </select>
-                  </label>
-                  <label className="block">
-                    <span className="text-sm font-bold text-slate-500">Subject</span>
-                    <select value={subject} onChange={e => setSubject(e.target.value)} className="mt-1 w-full bg-slate-50 border border-slate-200 p-3 rounded-xl font-bold">
-                      {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                  </label>
-                </div>
-                <label className="block">
-                  <span className="text-sm font-bold text-slate-500">What topic are you teaching today?</span>
-                  <input required value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. Fractions, The Water Cycle, The American Revolution..." className="mt-1 w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-lg" />
-                </label>
+        <section className="mt-10 grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
+          <div>
+            <h1 className="display-type max-w-3xl text-[4.8rem] font-bold leading-[0.84] md:text-[7.2rem]">
+              Would you
+              <br />
+              rather?
+            </h1>
+            <p className="mt-8 max-w-2xl text-2xl font-semibold leading-8">
+              Describe what you're teaching. ReflectAI generates three
+              curriculum-aligned scenarios. Pick one and launch it.
+            </p>
+          </div>
 
-                {error && <p className="font-bold text-red-500">{error}</p>}
-                
-                <button
-                  type="submit"
-                  disabled={generating || !topic.trim()}
-                  className="mt-4 bg-[#9b51e0] text-white px-8 py-4 rounded-full font-black text-lg shadow-xl hover:-translate-y-1 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {generating ? "Brainstorming scenarios..." : "Generate Options"}
-                  <Sparkles size={20} />
-                </button>
-              </form>
+          {!options ? (
+            <div className="panel grid gap-5 p-6 md:p-8">
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="grid gap-2">
+                  <span className="text-sm font-black uppercase tracking-[0.08em]">
+                    Grade level
+                  </span>
+                  <select
+                    value={grade}
+                    onChange={(e) => setGrade(e.target.value)}
+                    className="focus-ring rounded-[24px] border-2 border-black bg-[#fff2b7] px-5 py-4 text-xl font-black"
+                  >
+                    {GRADES.map(g => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-sm font-black uppercase tracking-[0.08em]">
+                    Subject
+                  </span>
+                  <select
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    className="focus-ring rounded-[24px] border-2 border-black bg-white px-5 py-4 text-xl font-black"
+                  >
+                    {SUBJECTS.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <label className="grid gap-2">
+                <span className="text-sm font-black uppercase tracking-[0.08em]">
+                  What topic are you teaching?
+                </span>
+                <textarea
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  placeholder="Example: equivalent fractions, the water cycle, the American Revolution..."
+                  className="focus-ring min-h-36 rounded-[24px] border-2 border-black bg-white px-5 py-4 text-xl font-semibold leading-7 placeholder:text-black/40"
+                />
+              </label>
+
+              {error ? <p className="font-black text-[#fd4401]">{error}</p> : null}
+
+              <button
+                onClick={generateOptions}
+                disabled={generating || !topic.trim()}
+                className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#9b51e0] px-7 py-4 text-lg font-black text-white transition hover:-translate-y-0.5 disabled:opacity-50"
+              >
+                <Sparkles size={20} />
+                {generating ? "Brainstorming scenarios..." : "Generate scenarios"}
+              </button>
             </div>
           ) : (
-            <div className="w-full">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-3xl font-black text-slate-900">Select a question</h2>
-                <button onClick={() => setOptions(null)} className="text-sm font-bold text-slate-500 hover:text-slate-900">Start Over</button>
+            <div className="grid gap-5">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-black uppercase tracking-[0.08em]">
+                  Pick a scenario to launch
+                </p>
+                <button
+                  onClick={() => setOptions(null)}
+                  className="focus-ring rounded-full border-2 border-black bg-white px-5 py-2 text-sm font-bold transition hover:-translate-y-0.5"
+                >
+                  Start over
+                </button>
               </div>
-              <div className="grid gap-6">
-                {options.map((q, idx) => (
-                  <div key={idx} className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-200 flex flex-col sm:flex-row gap-6 items-center">
-                    <div className="flex-1">
-                      <span className="inline-block bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider mb-4">{q.vibe}</span>
-                      <p className="text-xl font-bold mb-2">Option A: {q.optionA}</p>
-                      <p className="text-xl font-bold">Option B: {q.optionB}</p>
-                    </div>
-                    <button
-                      onClick={() => launchSession(q)}
-                      disabled={launching}
-                      className="whitespace-nowrap bg-slate-900 text-white px-8 py-4 rounded-full font-black shadow-lg hover:bg-[#04c6c5] hover:text-black hover:-translate-y-1 transition-all disabled:opacity-50"
-                    >
-                      {launching ? "Launching..." : "Present to Class"}
-                    </button>
+
+              {options.map((q, idx) => (
+                <div
+                  key={idx}
+                  className="panel grid gap-4 p-6 md:p-8"
+                >
+                  <div className="rounded-[24px] border-2 border-black bg-[#9b51e0] px-4 py-2 text-sm font-black uppercase tracking-[0.08em] text-white w-fit">
+                    {q.vibe}
                   </div>
-                ))}
-              </div>
-              {error && <p className="mt-4 font-bold text-red-500 text-center">{error}</p>}
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="rounded-[24px] border-2 border-black bg-[#fff2b7] p-5">
+                      <p className="text-sm font-black uppercase tracking-[0.08em] text-black/50">Option A</p>
+                      <p className="display-type mt-2 text-2xl font-bold leading-tight">{q.optionA}</p>
+                    </div>
+                    <div className="rounded-[24px] border-2 border-black bg-white p-5">
+                      <p className="text-sm font-black uppercase tracking-[0.08em] text-black/50">Option B</p>
+                      <p className="display-type mt-2 text-2xl font-bold leading-tight">{q.optionB}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => launchSession(q)}
+                    disabled={launching}
+                    className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#fd4401] px-7 py-4 text-lg font-black text-white transition hover:-translate-y-0.5 disabled:opacity-50"
+                  >
+                    <Check size={20} />
+                    {launching ? "Launching..." : "Launch this scenario"}
+                  </button>
+                </div>
+              ))}
+
+              {error ? <p className="font-black text-[#fd4401]">{error}</p> : null}
             </div>
           )}
         </section>

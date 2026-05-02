@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Brain, ChevronDown, Quote, RefreshCcw, Sparkles, Users } from "lucide-react";
+import { ArrowLeft, BookOpen, Brain, Check, RefreshCcw, Sparkles, Users } from "lucide-react";
 
 const QUESTION_BANK = {
   "k1": {
@@ -145,10 +145,10 @@ const QUESTION_BANK = {
 };
 
 const GRADES = [
-  { id: 'k1', label: 'Grades K-1', color: 'bg-emerald-500' },
-  { id: '25', label: 'Grades 2-5', color: 'bg-amber-500' },
-  { id: '68', label: 'Grades 6-8', color: 'bg-blue-500' },
-  { id: '912', label: 'Grades 9-12', color: 'bg-purple-500' }
+  { id: 'k1', label: 'Grades K-1' },
+  { id: '25', label: 'Grades 2-5' },
+  { id: '68', label: 'Grades 6-8' },
+  { id: '912', label: 'Grades 9-12' }
 ];
 
 const CATEGORIES = [
@@ -231,116 +231,126 @@ export default function SpinPage() {
     router.push(`/teacher/session/${data.session.id}/live`);
   }
 
-  const activeGradeData = GRADES.find(g => g.id === grade)!;
-
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 selection:bg-indigo-100 relative overflow-hidden flex flex-col px-5 py-6 md:px-8">
-      {/* Background Decor */}
-      <div className="absolute top-[-5%] left-[-5%] w-[40vw] h-[40vw] bg-blue-100/50 rounded-full blur-[100px] -z-10 animate-pulse"></div>
-      <div className="absolute bottom-[-5%] right-[-5%] w-[40vw] h-[40vw] bg-indigo-100/50 rounded-full blur-[100px] -z-10 animate-pulse" style={{ animationDelay: '2s' }}></div>
-
-      <div className="mx-auto w-full max-w-7xl">
+    <main className="min-h-screen bg-[#fdcb40] px-5 py-6 text-black md:px-8">
+      <div className="mx-auto max-w-7xl">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <Link
             href="/teacher"
-            className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/60 backdrop-blur-md px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-white shadow-sm"
+            className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white px-5 py-3 text-sm font-bold text-black transition hover:-translate-y-0.5"
           >
             <ArrowLeft size={16} />
             Dashboard
           </Link>
-          
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-indigo-500" />
-            <h1 className="text-xs font-black tracking-[0.4em] uppercase text-slate-400 hidden sm:block">
-              Reflection Generator
-            </h1>
-          </div>
-          
-          <div className="relative">
-            <select
-              value={grade}
-              onChange={(e) => setGrade(e.target.value as keyof typeof QUESTION_BANK)}
-              className="appearance-none bg-white/60 backdrop-blur-md border border-slate-200 pl-6 pr-12 py-3 rounded-full text-sm font-bold text-slate-600 cursor-pointer hover:bg-white transition-all focus:outline-none focus:ring-4 focus:ring-indigo-100 shadow-sm"
-            >
-              {GRADES.map(g => (
-                <option key={g.id} value={g.id}>{g.label}</option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          </div>
+          <button
+            onClick={async () => {
+              const { getFirebaseClientServices } = await import("@/lib/firebase/client");
+              const { signOut } = await import("firebase/auth");
+              const { auth } = getFirebaseClientServices();
+              if (auth) {
+                await signOut(auth);
+              }
+              await fetch("/api/auth/logout", { method: "POST" });
+              router.push("/teacher");
+            }}
+            className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white px-5 py-2 text-sm font-bold text-black transition hover:-translate-y-0.5"
+          >
+            Sign out
+          </button>
         </header>
 
-        <section className="flex-grow flex flex-col items-center justify-center max-w-4xl mx-auto w-full gap-10 mt-16 pb-12">
-          {/* Category Selection */}
-          <div className="flex flex-wrap justify-center gap-3 z-10">
-            {CATEGORIES.map(cat => {
-              const Icon = cat.icon;
-              const isActive = category === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setCategory(cat.id as typeof category)}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold transition-all ${
-                    isActive 
-                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200 -translate-y-1" 
-                      : "bg-white text-slate-500 hover:text-slate-700 hover:bg-slate-100 border border-slate-100"
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{cat.label}</span>
-                </button>
-              );
-            })}
-          </div>
+        <section className="mt-10 grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
+          <div>
+            <h1 className="display-type max-w-3xl text-[4.8rem] font-bold leading-[0.84] md:text-[7.2rem]">
+              Spin.
+              <br />
+              Reflect.
+              <br />
+              Discuss.
+            </h1>
+            <p className="mt-8 max-w-2xl text-2xl font-semibold leading-8">
+              Pick a grade band and category, spin for a random question,
+              then launch it to your class in one tap.
+            </p>
 
-          {/* Question Card */}
-          <div className="w-full bg-white rounded-[3.5rem] p-12 sm:p-24 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.05)] relative overflow-hidden border border-slate-100 text-center min-h-[300px] flex items-center justify-center">
-            {/* Subtle Decorative Icon */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-50 text-slate-50 pointer-events-none">
-              <Quote className="w-64 h-64" />
-            </div>
-            
-            <div className={`relative z-10 transition-all duration-500 ease-out ${isSpinning ? 'opacity-0 scale-95 blur-sm' : 'opacity-100 scale-100'}`}>
-              <div className="mb-8">
-                <span className={`inline-block px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-white transition-colors duration-300 ${activeGradeData.color}`}>
-                  {activeGradeData.label}
+            <div className="mt-8 grid gap-4 md:grid-cols-2">
+              <label className="grid gap-2">
+                <span className="text-sm font-black uppercase tracking-[0.08em]">
+                  Grade band
                 </span>
-              </div>
-              
-              <h2 className="text-3xl sm:text-5xl font-black text-slate-900 leading-[1.15] tracking-tight">
-                {question}
-              </h2>
+                <select
+                  value={grade}
+                  onChange={(e) => setGrade(e.target.value as keyof typeof QUESTION_BANK)}
+                  className="focus-ring rounded-[24px] border-2 border-black bg-white px-5 py-4 text-xl font-black"
+                >
+                  {GRADES.map(g => (
+                    <option key={g.id} value={g.id}>{g.label}</option>
+                  ))}
+                </select>
+              </label>
             </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              {CATEGORIES.map(cat => {
+                const Icon = cat.icon;
+                const isActive = category === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setCategory(cat.id as typeof category)}
+                    className={`focus-ring inline-flex items-center gap-2 rounded-full border-2 border-black px-5 py-3 text-sm font-black transition hover:-translate-y-0.5 ${
+                      isActive
+                        ? "bg-[#006cff] text-white"
+                        : "bg-white text-black"
+                    }`}
+                  >
+                    <Icon size={16} />
+                    {cat.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="mt-6 text-sm font-black uppercase tracking-[0.08em] text-black/50">
+              Press Space to spin
+            </p>
           </div>
 
-          {error && <p className="font-black text-[#fd4401]">{error}</p>}
+          <div className="panel grid gap-5 p-6 md:p-8">
+            <div className="rounded-[24px] border-2 border-black bg-[#fff2b7] p-8 text-center min-h-[280px] flex flex-col items-center justify-center">
+              <p className="text-sm font-black uppercase tracking-[0.08em] text-black/50 mb-4">
+                {GRADES.find(g => g.id === grade)?.label} · {category}
+              </p>
+              <div className={`transition-all duration-500 ease-out ${isSpinning ? 'opacity-0 scale-95 blur-sm' : 'opacity-100 scale-100'}`}>
+                <h2 className="display-type text-4xl sm:text-5xl font-bold leading-[0.9]">
+                  {question}
+                </h2>
+              </div>
+            </div>
 
-          {/* Actions */}
-          <div className="flex flex-col items-center gap-4 w-full">
-            <div className="flex flex-wrap justify-center gap-4">
+            {error ? <p className="font-black text-[#fd4401]">{error}</p> : null}
+
+            <div className="grid gap-3 md:grid-cols-2">
               <button
                 onClick={spin}
                 disabled={isSpinning}
-                className="group bg-slate-900 text-white px-8 py-5 rounded-full font-black text-lg shadow-2xl hover:bg-indigo-600 hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-3"
+                className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#006cff] px-7 py-4 text-lg font-black text-white transition hover:-translate-y-0.5 disabled:opacity-50"
               >
-                <RefreshCcw className={`w-5 h-5 transition-transform duration-700 ${isSpinning ? 'animate-spin' : ''}`} />
-                Spin Again
+                <RefreshCcw size={20} className={isSpinning ? 'animate-spin' : ''} />
+                Spin again
               </button>
-              
-              {hasSpun && !isSpinning && (
+
+              {hasSpun && !isSpinning ? (
                 <button
                   onClick={launchSession}
                   disabled={launching}
-                  className="group bg-[#04c6c5] text-black px-8 py-5 rounded-full font-black text-lg shadow-2xl hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-3"
+                  className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#fd4401] px-7 py-4 text-lg font-black text-white transition hover:-translate-y-0.5 disabled:opacity-50"
                 >
-                  <Sparkles className="w-5 h-5" />
-                  {launching ? "Launching..." : "Launch this Reflection"}
+                  <Check size={20} />
+                  {launching ? "Launching..." : "Launch this question"}
                 </button>
-              )}
+              ) : null}
             </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mt-2">
-              Press Space to spin
-            </p>
           </div>
         </section>
       </div>
