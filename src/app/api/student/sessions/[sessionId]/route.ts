@@ -35,6 +35,7 @@ export async function GET(
         routineId: session.routineId,
         title: session.title,
         learningTarget: session.learningTarget,
+        config: session.config,
         stimulus: session.stimulus,
         exitTicketQuestion: session.exitTicketQuestion,
         exitTicketMaxTurns: session.exitTicketMaxTurns,

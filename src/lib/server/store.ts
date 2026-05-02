@@ -3,7 +3,7 @@ import { generateJoinCode, normalizeJoinCode } from "@/lib/codes";
 import type { DashboardPayload, Participant, Reflection, Session, Stimulus } from "@/lib/models";
 import { DEFAULT_SESSION_CONFIG } from "@/lib/routines";
 import { buildThinkingMap } from "@/lib/thinking-map";
-import type { ReflectionStep, SafetyAlert } from "@/lib/types";
+import type { ReflectionStep, SafetyAlert, SessionConfig } from "@/lib/types";
 import { getBaseUrl } from "./env";
 import { getAdminDb } from "./firebase-admin";
 
@@ -15,6 +15,7 @@ type CreateSessionInput = {
   exitTicketQuestion?: string;
   exitTicketContext?: string;
   exitTicketMaxTurns?: number;
+  config?: Partial<SessionConfig>;
   stimulus?: Stimulus;
 };
 
@@ -68,7 +69,7 @@ export async function createSession(input: CreateSessionInput) {
     exitTicketContext: input.exitTicketContext?.trim(),
     exitTicketMaxTurns: input.exitTicketMaxTurns ?? 4,
     stimulus: input.stimulus ?? { kind: "none", value: "" },
-    config: DEFAULT_SESSION_CONFIG,
+    config: { ...DEFAULT_SESSION_CONFIG, ...input.config },
     joinCode,
     joinLink: `${getBaseUrl()}/join/${joinCode}`,
     status: "active",

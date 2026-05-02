@@ -2,7 +2,7 @@ import type { RoutineStep, SessionConfig } from "./types";
 
 export const DEFAULT_SESSION_CONFIG: SessionConfig = {
   aiFollowupsEnabled: true,
-  voiceMinimumSeconds: 15,
+  voiceMinimumSeconds: 5,
   responseMode: "choice",
   showTranscription: true,
   studentResultsVisibility: "full",

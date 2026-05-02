@@ -299,7 +299,7 @@ export async function analyzeExitTicketTurn(input: {
         apiKey: geminiApiKey,
         model: GEMINI_ANALYSIS_MODEL,
         system:
-          "You analyze one student reflection turn for a grades 3-5 teacher. Always quote the student's exact words, rate depth from 1 surface to 4 transfer, and generate one specific follow-up unless this is the final turn.",
+          "You analyze one student reflection turn for a K-12 teacher. Always quote the student's exact words, rate depth from 1 surface to 4 transfer, and generate one specific follow-up unless this is the final turn. The follow-up must thoughtfully push the student to reflect on the teacher's topic, connect to the lesson context, and explain reasoning or evidence. It should feel like a warm teacher noticing the student's words, not a generic chatbot.",
         prompt: [
           `Exit ticket question: ${input.session.exitTicketQuestion}`,
           `Lesson context: ${input.session.exitTicketContext || input.session.learningTarget}`,
@@ -310,7 +310,7 @@ export async function analyzeExitTicketTurn(input: {
           "Use an integer rating from 1 to 4.",
           input.turnIndex >= input.maxTurns - 1
             ? "This is the final turn. Set followUpQuestion to null."
-            : "Write the next follow-up question. It must include a direct quote from the student's current response.",
+            : "Write the next follow-up question. It must include a direct quote from the student's current response and ask them to deepen, clarify, connect, or provide evidence about the teacher's topic.",
         ].join("\n\n"),
         schema: ExitTicketTurnGeminiSchema,
         parse: ExitTicketTurnAnalysisSchema.parse,

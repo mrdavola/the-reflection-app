@@ -15,6 +15,7 @@ type StudentSessionPayload = {
     | "routineId"
     | "title"
     | "learningTarget"
+    | "config"
     | "stimulus"
     | "exitTicketQuestion"
     | "exitTicketMaxTurns"
@@ -73,6 +74,8 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
   const chunks = useRef<Blob[]>([]);
   const timer = useRef<number | null>(null);
   const step = SEE_THINK_WONDER_ROUTINE.steps[stepIndex];
+  const voiceMinimumSeconds =
+    studentSession?.session.config.voiceMinimumSeconds ?? 5;
 
   useEffect(() => {
     fetch(
@@ -301,7 +304,7 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
             <div className="mt-8 rounded-[24px] border-2 border-black bg-[#fff2b7] p-6 text-center">
               <button
                 onClick={recording ? stopAndSubmitAudio : startRecording}
-                disabled={submitting || (recording && seconds < 15)}
+                disabled={submitting || (recording && seconds < voiceMinimumSeconds)}
                 className={`focus-ring mx-auto grid size-40 place-items-center rounded-full border-2 border-black text-white transition hover:-translate-y-0.5 ${
                   recording ? "bg-[#fd4401]" : "bg-[#006cff]"
                 } disabled:opacity-50`}
@@ -311,10 +314,12 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
               <p className="display-type mt-5 text-5xl font-bold">{seconds}s</p>
               <p className="mt-2 text-lg font-bold">
                 {recording
-                  ? seconds < 15
-                    ? "Keep going for at least 15 seconds."
+                  ? seconds < voiceMinimumSeconds
+                    ? `Keep going for at least ${voiceMinimumSeconds} seconds.`
                     : "You can stop when your thought feels complete."
-                  : "Tap the microphone and speak your thinking."}
+                  : voiceMinimumSeconds > 0
+                    ? `Tap the microphone and speak for at least ${voiceMinimumSeconds} seconds.`
+                    : "Tap the microphone and speak your thinking."}
               </p>
               {voiceTranscript ? (
                 <div className="mt-5 rounded-[20px] border-2 border-black bg-white p-4 text-left">

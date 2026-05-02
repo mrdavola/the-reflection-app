@@ -17,6 +17,8 @@ export default function NewExitTicketPage() {
   const [selectedGrade, setSelectedGrade] = useState("Grade 4");
   const [customGrade, setCustomGrade] = useState("");
   const [lessonContext, setLessonContext] = useState("");
+  const [voiceMinimumSeconds, setVoiceMinimumSeconds] = useState(5);
+  const [followUpCount, setFollowUpCount] = useState(3);
   const [question, setQuestion] = useState("");
   const [rationale, setRationale] = useState("");
   const [loadingDraft, setLoadingDraft] = useState(false);
@@ -62,7 +64,10 @@ export default function NewExitTicketPage() {
         gradeBand,
         exitTicketQuestion: question,
         exitTicketContext: `${gradeBand} ${subject}: ${lessonContext}`,
-        exitTicketMaxTurns: 4,
+        exitTicketMaxTurns: followUpCount + 1,
+        config: {
+          voiceMinimumSeconds,
+        },
       }),
     });
     const data = await response.json();
@@ -96,7 +101,7 @@ export default function NewExitTicketPage() {
             <h1 className="display-type max-w-3xl text-[4.8rem] font-bold leading-[0.84] md:text-[7.2rem]">
               One question.
               <br />
-              Three follow-ups.
+              Teacher-set follow-ups.
               <br />
               Real thinking.
             </h1>
@@ -223,6 +228,78 @@ export default function NewExitTicketPage() {
                 className="focus-ring min-h-40 rounded-[24px] border-2 border-black bg-[#fff2b7] px-5 py-4 text-2xl font-black leading-8 placeholder:text-black/40"
               />
             </label>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="grid gap-2">
+                <span className="text-sm font-black uppercase tracking-[0.08em]">
+                  Follow-up questions
+                </span>
+                <div className="rounded-[24px] border-2 border-black bg-white p-5">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="display-type text-4xl font-bold">
+                      {followUpCount}
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={4}
+                      value={followUpCount}
+                      onChange={(event) =>
+                        setFollowUpCount(
+                          Math.min(4, Math.max(1, Number(event.target.value))),
+                        )
+                      }
+                      className="focus-ring w-24 rounded-[18px] border-2 border-black bg-white px-4 py-3 text-xl font-black"
+                    />
+                  </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={4}
+                    step={1}
+                    value={followUpCount}
+                    onChange={(event) => setFollowUpCount(Number(event.target.value))}
+                    className="mt-4 w-full"
+                  />
+                </div>
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-sm font-black uppercase tracking-[0.08em]">
+                  Voice minimum
+                </span>
+                <div className="rounded-[24px] border-2 border-black bg-[#fff2b7] p-5">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="display-type text-4xl font-bold">
+                      {voiceMinimumSeconds}s
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={60}
+                      value={voiceMinimumSeconds}
+                      onChange={(event) =>
+                        setVoiceMinimumSeconds(
+                          Math.min(60, Math.max(0, Number(event.target.value))),
+                        )
+                      }
+                      className="focus-ring w-24 rounded-[18px] border-2 border-black bg-white px-4 py-3 text-xl font-black"
+                    />
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={60}
+                    step={5}
+                    value={voiceMinimumSeconds}
+                    onChange={(event) =>
+                      setVoiceMinimumSeconds(Number(event.target.value))
+                    }
+                    className="mt-4 w-full"
+                  />
+                </div>
+              </label>
+            </div>
 
             {rationale ? (
               <div className="rounded-[24px] border-2 border-black bg-[#04c6c5] p-5">

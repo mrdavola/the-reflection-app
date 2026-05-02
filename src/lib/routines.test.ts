@@ -8,7 +8,7 @@ describe("See Think Wonder routine", () => {
       "Think",
       "Wonder",
     ]);
-    expect(SEE_THINK_WONDER_ROUTINE.config.voiceMinimumSeconds).toBe(15);
+    expect(SEE_THINK_WONDER_ROUTINE.config.voiceMinimumSeconds).toBe(5);
   });
 
   it("looks up routine steps by one-based step number", () => {

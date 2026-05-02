@@ -11,6 +11,11 @@ const CreateSessionSchema = z.object({
   exitTicketQuestion: z.string().optional(),
   exitTicketContext: z.string().optional(),
   exitTicketMaxTurns: z.number().int().min(2).max(5).optional(),
+  config: z
+    .object({
+      voiceMinimumSeconds: z.number().int().min(0).max(60).optional(),
+    })
+    .optional(),
   stimulus: z
     .object({
       kind: z.enum(["image", "text", "link", "none"]),

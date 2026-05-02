@@ -13,6 +13,7 @@ export default function NewSessionPage() {
   const [stimulusImage, setStimulusImage] = useState("");
   const [imagePrompt, setImagePrompt] = useState("");
   const [imageMode, setImageMode] = useState<"generate" | "upload" | "text">("generate");
+  const [voiceMinimumSeconds, setVoiceMinimumSeconds] = useState(5);
   const [generatingImage, setGeneratingImage] = useState(false);
   const [imageError, setImageError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -31,6 +32,9 @@ export default function NewSessionPage() {
         title,
         learningTarget,
         stimulus: stimulusPayload,
+        config: {
+          voiceMinimumSeconds,
+        },
       }),
     });
     const data = await response.json();
@@ -245,6 +249,39 @@ export default function NewSessionPage() {
                 </div>
               ) : null}
             </div>
+            <label className="grid gap-2">
+              <span className="text-sm font-black uppercase tracking-[0.08em]">
+                Voice minimum
+              </span>
+              <div className="rounded-[24px] border-2 border-black bg-[#fff2b7] p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="display-type text-4xl font-bold">
+                    {voiceMinimumSeconds}s
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={60}
+                    value={voiceMinimumSeconds}
+                    onChange={(event) =>
+                      setVoiceMinimumSeconds(Number(event.target.value))
+                    }
+                    className="focus-ring w-28 rounded-[18px] border-2 border-black bg-white px-4 py-3 text-xl font-black"
+                  />
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={60}
+                  step={5}
+                  value={voiceMinimumSeconds}
+                  onChange={(event) =>
+                    setVoiceMinimumSeconds(Number(event.target.value))
+                  }
+                  className="mt-4 w-full"
+                />
+              </div>
+            </label>
           </div>
           <aside className="flex flex-col justify-between rounded-[24px] border-2 border-black bg-[#006cff] p-6 text-white">
             <div>
@@ -252,7 +289,7 @@ export default function NewSessionPage() {
                 Built for today’s class.
               </p>
               <p className="mt-5 text-lg font-semibold leading-7">
-                Voice-first, text-ready, 15 second minimum, adaptive follow-ups,
+                Voice-first, text-ready, teacher-set voice minimum, adaptive follow-ups,
                 and a thinking snapshot for every student.
               </p>
             </div>

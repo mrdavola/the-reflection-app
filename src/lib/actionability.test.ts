@@ -12,7 +12,7 @@ const baseDashboard: DashboardPayload = {
     stimulus: { kind: "none", value: "" },
     config: {
       aiFollowupsEnabled: true,
-      voiceMinimumSeconds: 15,
+      voiceMinimumSeconds: 5,
       responseMode: "choice",
       showTranscription: true,
       studentResultsVisibility: "full",
