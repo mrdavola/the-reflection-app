@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { generateExitTicketQuestion } from "@/lib/ai/service";
+import { requireTeacherSession } from "@/lib/server/auth";
 import { badRequest, ok, serverError } from "@/lib/server/http";
 
 const GenerateExitTicketQuestionSchema = z.object({
@@ -10,6 +11,7 @@ const GenerateExitTicketQuestionSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    await requireTeacherSession(request);
     const body = GenerateExitTicketQuestionSchema.safeParse(await request.json());
     if (!body.success) return badRequest("Exit ticket context is required.");
 

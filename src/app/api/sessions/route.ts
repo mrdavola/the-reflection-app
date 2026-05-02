@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { requireTeacherSession } from "@/lib/server/auth";
 import { createSession, listSessions } from "@/lib/server/store";
 import { badRequest, ok, serverError } from "@/lib/server/http";
 
@@ -18,12 +19,18 @@ const CreateSessionSchema = z.object({
     .optional(),
 });
 
-export async function GET() {
-  return ok({ sessions: await listSessions() });
+export async function GET(request: Request) {
+  try {
+    await requireTeacherSession(request);
+    return ok({ sessions: await listSessions() });
+  } catch (error) {
+    return serverError(error);
+  }
 }
 
 export async function POST(request: Request) {
   try {
+    await requireTeacherSession(request);
     const body = CreateSessionSchema.safeParse(await request.json());
     if (!body.success) return badRequest("Session payload is invalid.");
 

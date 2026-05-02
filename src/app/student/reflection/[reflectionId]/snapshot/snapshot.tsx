@@ -2,17 +2,20 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Sparkles } from "lucide-react";
 import type { Reflection } from "@/lib/models";
 
 export default function Snapshot({ reflectionId }: { reflectionId: string }) {
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token") ?? "";
   const [reflection, setReflection] = useState<Reflection | null>(null);
 
   useEffect(() => {
-    fetch(`/api/reflections/${reflectionId}`, { cache: "no-store" })
+    fetch(`/api/reflections/${reflectionId}?token=${encodeURIComponent(token)}`, { cache: "no-store" })
       .then((response) => response.json())
       .then((data) => setReflection(data.reflection));
-  }, [reflectionId]);
+  }, [reflectionId, token]);
 
   if (!reflection) {
     return <main className="min-h-screen bg-[#fdcb40] p-8 text-xl font-bold">Loading snapshot...</main>;

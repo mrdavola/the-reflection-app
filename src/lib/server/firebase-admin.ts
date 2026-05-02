@@ -1,4 +1,5 @@
 import { cert, getApps, initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { hasFirebaseAdminEnv } from "./env";
@@ -28,6 +29,12 @@ export function getAdminDb() {
 export function getAdminBucket() {
   const app = getFirebaseAdminApp();
   return app && process.env.FIREBASE_STORAGE_BUCKET ? getStorage(app).bucket() : null;
+}
+
+export async function verifyFirebaseIdToken(idToken: string) {
+  const app = getFirebaseAdminApp();
+  if (!app) return null;
+  return getAuth(app).verifyIdToken(idToken);
 }
 
 export async function storeReflectionAudio(input: {

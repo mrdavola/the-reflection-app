@@ -14,5 +14,15 @@ export function notFound(message = "Not found.") {
 
 export function serverError(error: unknown) {
   const message = error instanceof Error ? error.message : "Something went wrong.";
+  if (
+    /authentication required|invalid participant token|could not verify google sign-in/i.test(
+      message,
+    )
+  ) {
+    return NextResponse.json({ error: message }, { status: 401 });
+  }
+  if (/not allowed for the pilot/i.test(message)) {
+    return NextResponse.json({ error: message }, { status: 403 });
+  }
   return NextResponse.json({ error: message }, { status: 500 });
 }

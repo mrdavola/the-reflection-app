@@ -36,8 +36,16 @@ pilotStore.__reflectAiPilotStore ??= {
 
 const { sessions, participants, reflections } = pilotStore.__reflectAiPilotStore;
 
-export async function createSession(input: CreateSessionInput) {
+function getDbOrThrowForProd() {
   const db = getAdminDb();
+  if (!db && process.env.NODE_ENV === "production") {
+    throw new Error("Firestore is required in production pilot mode.");
+  }
+  return db;
+}
+
+export async function createSession(input: CreateSessionInput) {
+  const db = getDbOrThrowForProd();
   const id = `session_${randomUUID()}`;
   let joinCode = generateJoinCode();
 
@@ -84,7 +92,7 @@ export async function createSession(input: CreateSessionInput) {
 }
 
 export async function listSessions() {
-  const db = getAdminDb();
+  const db = getDbOrThrowForProd();
   if (db) {
     const snapshot = await db
       .collection("sessions")
@@ -97,7 +105,7 @@ export async function listSessions() {
 }
 
 export async function getSession(sessionId: string) {
-  const db = getAdminDb();
+  const db = getDbOrThrowForProd();
   if (db) {
     const doc = await db.collection("sessions").doc(sessionId).get();
     return doc.exists ? (doc.data() as Session) : null;
@@ -108,7 +116,7 @@ export async function getSession(sessionId: string) {
 
 export async function getSessionByJoinCode(joinCode: string) {
   const normalized = normalizeJoinCode(joinCode);
-  const db = getAdminDb();
+  const db = getDbOrThrowForProd();
   if (db) {
     const snapshot = await db
       .collection("sessions")
@@ -152,7 +160,7 @@ export async function joinSession(joinCode: string, displayName: string) {
     completedAt: null,
   };
 
-  const db = getAdminDb();
+  const db = getDbOrThrowForProd();
   if (db) {
     await db
       .collection("sessions")
@@ -178,7 +186,7 @@ export async function joinSession(joinCode: string, displayName: string) {
 }
 
 export async function getReflection(reflectionId: string) {
-  const db = getAdminDb();
+  const db = getDbOrThrowForProd();
   if (db) {
     const sessionsSnapshot = await db.collection("sessions").get();
     for (const sessionDoc of sessionsSnapshot.docs) {
@@ -195,6 +203,18 @@ export async function getReflection(reflectionId: string) {
 }
 
 export async function getParticipantByToken(sessionId: string, token: string) {
+  const db = getDbOrThrowForProd();
+  if (db) {
+    const snapshot = await db
+      .collection("sessions")
+      .doc(sessionId)
+      .collection("participants")
+      .where("participantToken", "==", token)
+      .limit(1)
+      .get();
+    return snapshot.empty ? null : (snapshot.docs[0].data() as Participant);
+  }
+
   return (
     [...participants.values()].find(
       (participant) =>
@@ -210,7 +230,7 @@ export async function submitReflectionStep(input: {
   alerts: SafetyAlert[];
   audioExpiresAt?: string | null;
 }) {
-  const db = getAdminDb();
+  const db = getDbOrThrowForProd();
   if (db) {
     const reflection = await getReflection(input.reflectionId);
     if (!reflection) throw new Error("Reflection not found.");
@@ -275,7 +295,7 @@ export async function completeReflection(input: {
   analysis: NonNullable<Reflection["overallAnalysis"]>;
   feedback: NonNullable<Reflection["studentFeedback"]>;
 }) {
-  const db = getAdminDb();
+  const db = getDbOrThrowForProd();
   if (db) {
     const reflection = await getReflection(input.reflectionId);
     if (!reflection) throw new Error("Reflection not found.");
@@ -327,7 +347,7 @@ export async function completeReflection(input: {
 }
 
 export async function getDashboard(sessionId: string): Promise<DashboardPayload | null> {
-  const db = getAdminDb();
+  const db = getDbOrThrowForProd();
   if (db) {
     const session = await getSession(sessionId);
     if (!session) return null;
@@ -373,7 +393,7 @@ export async function getDashboard(sessionId: string): Promise<DashboardPayload 
 }
 
 export async function saveClassSummary(sessionId: string, summary: string) {
-  const db = getAdminDb();
+  const db = getDbOrThrowForProd();
   if (db) {
     const session = await getSession(sessionId);
     if (!session) throw new Error("Session not found.");
@@ -391,6 +411,18 @@ export async function saveClassSummary(sessionId: string, summary: string) {
 }
 
 export async function seedDemoSession() {
+  const db = getDbOrThrowForProd();
+  if (db) {
+    const snapshot = await db
+      .collection("sessions")
+      .where("title", "==", "Demo: See Think Wonder")
+      .limit(1)
+      .get();
+    if (!snapshot.empty) {
+      return snapshot.docs[0].data() as Session;
+    }
+  }
+
   if ([...sessions.values()].some((session) => session.title.includes("Demo"))) {
     return [...sessions.values()].find((session) => session.title.includes("Demo"))!;
   }

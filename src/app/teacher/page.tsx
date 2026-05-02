@@ -2,17 +2,69 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { signInWithPopup, signOut } from "firebase/auth";
 import { ArrowRight, MessageCircle, Play, Plus, Sparkles } from "lucide-react";
+import { getFirebaseClientServices } from "@/lib/firebase/client";
 import type { Session } from "@/lib/models";
 
 export default function TeacherPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const [authenticating, setAuthenticating] = useState(false);
+  const [isTeacherSession, setIsTeacherSession] = useState(false);
+  const [authError, setAuthError] = useState("");
 
   async function loadSessions() {
     const response = await fetch("/api/sessions", { cache: "no-store" });
+    if (response.status === 401) {
+      setIsTeacherSession(false);
+      setLoading(false);
+      return;
+    }
     const data = await response.json();
+    setIsTeacherSession(true);
     setSessions(data.sessions ?? []);
+    setLoading(false);
+  }
+
+  async function signInTeacher() {
+    const { auth, googleProvider } = getFirebaseClientServices();
+    if (!auth || !googleProvider) {
+      setAuthError("Firebase Auth is not configured in this environment.");
+      return;
+    }
+
+    setAuthenticating(true);
+    setAuthError("");
+    try {
+      const credential = await signInWithPopup(auth, googleProvider);
+      const idToken = await credential.user.getIdToken();
+      const sessionResponse = await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+      const sessionData = await sessionResponse.json();
+      if (!sessionResponse.ok) {
+        throw new Error(sessionData.error ?? "Could not start teacher session.");
+      }
+      setIsTeacherSession(true);
+      await loadSessions();
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "Could not sign in.");
+    } finally {
+      setAuthenticating(false);
+    }
+  }
+
+  async function signOutTeacher() {
+    const { auth } = getFirebaseClientServices();
+    if (auth) {
+      await signOut(auth);
+    }
+    await fetch("/api/auth/logout", { method: "POST" });
+    setIsTeacherSession(false);
+    setSessions([]);
     setLoading(false);
   }
 
@@ -29,9 +81,18 @@ export default function TeacherPage() {
   useEffect(() => {
     let active = true;
     fetch("/api/sessions", { cache: "no-store" })
-      .then((response) => response.json())
+      .then(async (response) => {
+        if (response.status === 401) {
+          setIsTeacherSession(false);
+          setLoading(false);
+          return null;
+        }
+        return response.json();
+      })
       .then((data) => {
+        if (!data) return;
         if (!active) return;
+        setIsTeacherSession(true);
         setSessions(data.sessions ?? []);
         setLoading(false);
       });
@@ -61,8 +122,17 @@ export default function TeacherPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
+            {isTeacherSession ? (
+              <button
+                onClick={signOutTeacher}
+                className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white px-7 py-4 font-bold text-black transition hover:-translate-y-0.5"
+              >
+                Sign out
+              </button>
+            ) : null}
             <button
               onClick={seedDemo}
+              disabled={!isTeacherSession}
               className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white px-7 py-4 font-bold text-black transition hover:-translate-y-0.5"
             >
               <Play size={18} />
@@ -70,6 +140,10 @@ export default function TeacherPage() {
             </button>
             <Link
               href="/teacher/new"
+              aria-disabled={!isTeacherSession}
+              onClick={(event) => {
+                if (!isTeacherSession) event.preventDefault();
+              }}
               className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#fd4401] px-7 py-4 font-bold text-white transition hover:-translate-y-0.5"
             >
               <Plus size={18} />
@@ -77,6 +151,10 @@ export default function TeacherPage() {
             </Link>
             <Link
               href="/teacher/exit-ticket/new"
+              aria-disabled={!isTeacherSession}
+              onClick={(event) => {
+                if (!isTeacherSession) event.preventDefault();
+              }}
               className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#006cff] px-7 py-4 font-bold text-white transition hover:-translate-y-0.5"
             >
               <MessageCircle size={18} />
@@ -86,7 +164,25 @@ export default function TeacherPage() {
         </header>
 
         <section className="mt-10 grid gap-4">
-          {loading ? (
+          {!isTeacherSession ? (
+            <div className="panel p-10">
+              <p className="display-type text-4xl font-bold">Teacher sign-in required</p>
+              <p className="mt-3 max-w-xl text-xl font-semibold leading-7">
+                Use your Google school account to open pilot sessions.
+              </p>
+              <button
+                onClick={signInTeacher}
+                disabled={authenticating}
+                className="focus-ring mt-5 inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#006cff] px-7 py-4 font-bold text-white transition hover:-translate-y-0.5 disabled:opacity-50"
+              >
+                {authenticating ? "Signing in..." : "Sign in with Google"}
+              </button>
+              {authError ? (
+                <p className="mt-4 text-sm font-black text-[#fd4401]">{authError}</p>
+              ) : null}
+            </div>
+          ) : null}
+          {!isTeacherSession ? null : loading ? (
             <div className="panel p-8 text-xl font-bold">Loading sessions...</div>
           ) : sessions.length === 0 ? (
             <div className="panel p-10">

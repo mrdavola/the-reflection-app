@@ -1,12 +1,14 @@
 import { generateSessionSummary } from "@/lib/ai/service";
+import { requireTeacherSession } from "@/lib/server/auth";
 import { badRequest, notFound, ok, serverError } from "@/lib/server/http";
 import { getDashboard, saveClassSummary } from "@/lib/server/store";
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ sessionId: string }> },
 ) {
   try {
+    await requireTeacherSession(request);
     const { sessionId } = await params;
     const dashboard = await getDashboard(sessionId);
     if (!dashboard) return notFound("Session not found.");
