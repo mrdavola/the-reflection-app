@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Keyboard, MessageCircle, Mic, Send, Square } from "lucide-react";
 import type { Session } from "@/lib/models";
 import type { ExitTicketTurnAnalysis } from "@/lib/ai/schemas";
-import { SEE_THINK_WONDER_ROUTINE } from "@/lib/routines";
+import { SEE_THINK_WONDER_ROUTINE, WOULD_YOU_RATHER_ROUTINE } from "@/lib/routines";
 
 type Mode = "voice" | "text";
 type StudentSessionPayload = {
@@ -19,6 +19,7 @@ type StudentSessionPayload = {
     | "stimulus"
     | "exitTicketQuestion"
     | "exitTicketMaxTurns"
+    | "wyrOptions"
   >;
 };
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
@@ -73,7 +74,10 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
   const voiceTranscriptRef = useRef("");
   const chunks = useRef<Blob[]>([]);
   const timer = useRef<number | null>(null);
-  const step = SEE_THINK_WONDER_ROUTINE.steps[stepIndex];
+  const routineDef = studentSession?.session.routineId === "would-you-rather"
+    ? WOULD_YOU_RATHER_ROUTINE
+    : SEE_THINK_WONDER_ROUTINE;
+  const step = routineDef.steps[stepIndex] ?? routineDef.steps[0];
   const voiceMinimumSeconds =
     studentSession?.session.config.voiceMinimumSeconds ?? 5;
 
@@ -209,7 +213,7 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
     setVoiceTranscript("");
     voiceTranscriptRef.current = "";
 
-    if (stepIndex < SEE_THINK_WONDER_ROUTINE.steps.length - 1) {
+    if (stepIndex < routineDef.steps.length - 1) {
       setStepIndex((index) => index + 1);
       setSeconds(0);
       return;
@@ -251,7 +255,7 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
     );
   }
 
-  if (studentSession.session.routineId === "exit-ticket-conversation") {
+  if (studentSession.session.routineId === "exit-ticket-conversation" || studentSession.session.routineId === "quick-spin") {
     return (
       <ExitTicketConversation
         sessionId={sessionId}
@@ -263,6 +267,38 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
     );
   }
 
+  if (studentSession.session.routineId === "would-you-rather" && stepIndex === 0) {
+    const opts = studentSession.session.wyrOptions;
+    return (
+      <main className="min-h-screen bg-[#fdcb40] px-5 py-6 text-black flex flex-col items-center justify-center" data-session-id={sessionId}>
+        <div className="max-w-5xl w-full grid gap-6 md:grid-cols-2">
+          <button 
+            disabled={submitting}
+            onClick={() => submitRoutineText(`Option A: ${opts?.optionA}`)}
+            className="focus-ring group rounded-[3rem] border-4 border-black bg-white p-10 hover:bg-[#04c6c5] transition-all hover:-translate-y-2 text-left disabled:opacity-50 min-h-[300px] flex flex-col justify-center shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]"
+          >
+            <span className="text-xl font-black uppercase tracking-widest text-slate-400 group-hover:text-black/50 mb-4 block">Option A</span>
+            <p className="display-type text-4xl sm:text-5xl font-bold leading-tight group-hover:text-black">{opts?.optionA}</p>
+          </button>
+          
+          <button 
+            disabled={submitting}
+            onClick={() => submitRoutineText(`Option B: ${opts?.optionB}`)}
+            className="focus-ring group rounded-[3rem] border-4 border-black bg-white p-10 hover:bg-[#9b51e0] transition-all hover:-translate-y-2 text-left disabled:opacity-50 min-h-[300px] flex flex-col justify-center shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:text-white"
+          >
+            <span className="text-xl font-black uppercase tracking-widest text-slate-400 group-hover:text-white/50 mb-4 block">Option B</span>
+            <p className="display-type text-4xl sm:text-5xl font-bold leading-tight">{opts?.optionB}</p>
+          </button>
+        </div>
+        {submitting && <p className="mt-8 text-2xl font-black text-black animate-pulse">Locking in your choice...</p>}
+      </main>
+    );
+  }
+
+  const promptText = studentSession.session.routineId === "would-you-rather" && stepIndex === 1
+    ? `You chose ${transcripts[0]?.split(": ")[1] ?? "that option"}. Explain your reasoning.`
+    : step.prompt;
+
   return (
     <main className="min-h-screen bg-[#fdcb40] px-5 py-6 text-black" data-session-id={sessionId}>
       <section className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[1fr_320px]">
@@ -271,7 +307,7 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
             Step {step.stepNumber} of 3
           </p>
           <h1 className="display-type mt-5 text-[3rem] font-bold leading-[0.85] sm:text-[4rem] md:text-[4.5rem]">
-            {step.prompt}
+            {promptText}
           </h1>
           <p className="mt-6 max-w-2xl text-2xl font-semibold leading-8">
             {step.studentCue}
@@ -355,7 +391,7 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
         <aside className="panel p-5">
           <h2 className="display-type text-3xl font-bold">Your routine</h2>
           <div className="mt-4 space-y-3">
-            {SEE_THINK_WONDER_ROUTINE.steps.map((item, index) => (
+            {routineDef.steps.map((item, index) => (
               <div
                 key={item.label}
                 className={`rounded-[20px] border-2 p-4 ${

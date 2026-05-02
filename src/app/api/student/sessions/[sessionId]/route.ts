@@ -39,6 +39,7 @@ export async function GET(
         stimulus: session.stimulus,
         exitTicketQuestion: session.exitTicketQuestion,
         exitTicketMaxTurns: session.exitTicketMaxTurns,
+        wyrOptions: session.wyrOptions,
       },
     });
   } catch (error) {
