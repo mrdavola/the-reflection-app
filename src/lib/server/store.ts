@@ -15,6 +15,7 @@ type CreateSessionInput = {
   exitTicketQuestion?: string;
   exitTicketContext?: string;
   exitTicketMaxTurns?: number;
+  wyrOptions?: { optionA: string; optionB: string };
   config?: Partial<SessionConfig>;
   stimulus?: Stimulus;
 };
@@ -62,12 +63,17 @@ export async function createSession(input: CreateSessionInput) {
       input.title?.trim() ||
       (input.routineId === "exit-ticket-conversation"
         ? "Exit Ticket Reflection"
-        : "See Think Wonder Reflection"),
+        : input.routineId === "would-you-rather"
+          ? "Would You Rather"
+          : input.routineId === "quick-spin"
+            ? "Quick Spin Reflection"
+            : "See Think Wonder Reflection"),
     learningTarget: input.learningTarget?.trim() || "",
-    gradeBand: input.gradeBand,
-    exitTicketQuestion: input.exitTicketQuestion?.trim(),
-    exitTicketContext: input.exitTicketContext?.trim(),
+    gradeBand: input.gradeBand ?? "",
+    exitTicketQuestion: input.exitTicketQuestion?.trim() ?? "",
+    exitTicketContext: input.exitTicketContext?.trim() ?? "",
     exitTicketMaxTurns: input.exitTicketMaxTurns ?? 4,
+    wyrOptions: input.wyrOptions,
     stimulus: input.stimulus ?? { kind: "none", value: "" },
     config: { ...DEFAULT_SESSION_CONFIG, ...input.config },
     joinCode,
@@ -84,7 +90,8 @@ export async function createSession(input: CreateSessionInput) {
   };
 
   if (db) {
-    await db.collection("sessions").doc(id).set(session);
+    // JSON round-trip strips undefined keys that Firestore rejects
+    await db.collection("sessions").doc(id).set(JSON.parse(JSON.stringify(session)));
     return session;
   }
 
