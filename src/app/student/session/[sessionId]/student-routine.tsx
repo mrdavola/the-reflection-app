@@ -270,7 +270,7 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
           <p className="inline-flex rounded-full border-2 border-black bg-[#04c6c5] px-4 py-2 text-sm font-black uppercase tracking-[0.08em]">
             Step {step.stepNumber} of 3
           </p>
-          <h1 className="display-type mt-5 text-[5.5rem] font-bold leading-[0.82]">
+          <h1 className="display-type mt-5 text-[3rem] font-bold leading-[0.85] sm:text-[4rem] md:text-[4.5rem]">
             {step.prompt}
           </h1>
           <p className="mt-6 max-w-2xl text-2xl font-semibold leading-8">
@@ -556,7 +556,7 @@ function ExitTicketConversation({
           <p className="inline-flex rounded-full border-2 border-black bg-[#04c6c5] px-4 py-2 text-sm font-black uppercase tracking-[0.08em]">
             Reflection turn {turnIndex + 1} of {maxTurns}
           </p>
-          <h1 className="display-type mt-5 text-[3.1rem] font-bold leading-[0.9] sm:text-[4.2rem] md:text-[5.4rem]">
+          <h1 className="display-type mt-5 text-[2rem] font-bold leading-[1.1] sm:text-[2.5rem] md:text-[3rem]">
             {prompt}
           </h1>
 

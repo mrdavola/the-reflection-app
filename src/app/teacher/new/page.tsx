@@ -93,11 +93,7 @@ export default function NewSessionPage() {
               60 second setup
             </div>
             <h1 className="display-type max-w-2xl text-[4.7rem] font-bold leading-[0.84] md:text-[7.3rem]">
-              Start human.
-              <br />
-              Use AI.
-              <br />
-              End human.
+              Thinking routines
             </h1>
             <p className="mt-8 max-w-xl text-2xl font-semibold leading-8">
               Pick the routine, add the context, and project a join code. The

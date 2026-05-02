@@ -439,7 +439,7 @@ function heuristicExitTicketTurn(input: {
     followUpQuestion:
       input.turnIndex >= input.maxTurns - 1
         ? null
-        : `You said “${quote}”; what is one example or detail from class that supports that?`,
+        : `That is an interesting thought! Can you share a specific example or detail from class that supports your idea?`,
   });
 }
 

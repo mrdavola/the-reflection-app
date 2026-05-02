@@ -113,32 +113,41 @@ export default function TeacherPage() {
     <main className="min-h-screen bg-[#fdcb40] px-5 py-6 text-black md:px-8">
       <div className="mx-auto max-w-7xl">
         <header className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="grid size-12 place-items-center rounded-[16px] border-2 border-black bg-[#04c6c5] text-black">
-                <Sparkles size={20} />
-              </div>
-              <span className="display-type text-3xl font-bold">ReflectAI</span>
+          <div className="flex items-center gap-3">
+            <div className="grid size-12 place-items-center rounded-[16px] border-2 border-black bg-[#04c6c5] text-black">
+              <Sparkles size={20} />
             </div>
-            <h1 className="display-type mt-10 max-w-4xl text-[4.6rem] font-bold leading-[0.85] md:text-[7rem]">
-              Make thinking visible.
-            </h1>
-            <p className="mt-6 max-w-2xl text-2xl font-semibold leading-8">
-              Launch a reflection, project the join code, and watch thinking
-              patterns emerge while students finish.
-            </p>
+            <span className="display-type text-3xl font-bold">ReflectAI</span>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {isTeacherSession ? (
               <button
                 onClick={signOutTeacher}
-                className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white px-7 py-4 font-bold text-black transition hover:-translate-y-0.5"
+                className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white px-5 py-2 text-sm font-bold text-black transition hover:-translate-y-0.5"
               >
                 Sign out
               </button>
-            ) : null}
+            ) : (
+              <button
+                onClick={signInTeacher}
+                disabled={authenticating}
+                className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#006cff] px-5 py-2 text-sm font-bold text-white transition hover:-translate-y-0.5 disabled:opacity-50"
+              >
+                {authenticating ? "Signing in..." : "Sign in"}
+              </button>
+            )}
           </div>
         </header>
+
+        <div>
+          <h1 className="display-type mt-10 max-w-4xl text-[4.6rem] font-bold leading-[0.85] md:text-[7rem]">
+            Make thinking visible.
+          </h1>
+          <p className="mt-6 max-w-2xl text-2xl font-semibold leading-8">
+            Launch a reflection, project the join code, and watch thinking
+            patterns emerge while students finish.
+          </p>
+        </div>
 
         {isTeacherSession ? (
           <section className="mt-10 grid gap-5 lg:grid-cols-3">
@@ -185,15 +194,8 @@ export default function TeacherPage() {
             <div className="panel p-10">
               <p className="display-type text-4xl font-bold">Teacher sign-in required</p>
               <p className="mt-3 max-w-xl text-xl font-semibold leading-7">
-                Use your Google school account to open pilot sessions.
+                Use your Google school account to open pilot sessions. Please sign in using the button in the top right corner.
               </p>
-              <button
-                onClick={signInTeacher}
-                disabled={authenticating}
-                className="focus-ring mt-5 inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#006cff] px-7 py-4 font-bold text-white transition hover:-translate-y-0.5 disabled:opacity-50"
-              >
-                {authenticating ? "Signing in..." : "Sign in with Google"}
-              </button>
               {authError ? (
                 <p className="mt-4 text-sm font-black text-[#fd4401]">{authError}</p>
               ) : null}
