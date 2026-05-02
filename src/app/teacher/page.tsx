@@ -163,7 +163,7 @@ export default function TeacherPage() {
               href="/teacher/new"
               icon={<ImagePlus size={26} />}
               title="See Think Wonder"
-              kicker="Image or stimulus routine"
+              kicker="Thinking routine"
               body="Launch the visible thinking routine with an uploaded, linked, text, or AI-generated stimulus."
               color="bg-[#fd4401] text-white"
             />

@@ -28,7 +28,7 @@ import { hasGeminiEnv } from "@/lib/server/env";
 const GEMINI_ANALYSIS_MODEL = process.env.GEMINI_ANALYSIS_MODEL ?? "gemini-flash-latest";
 const GEMINI_TRANSCRIPTION_MODEL =
   process.env.GEMINI_TRANSCRIPTION_MODEL ?? GEMINI_ANALYSIS_MODEL;
-const GEMINI_IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL ?? "gemini-2.5-flash-image";
+const GEMINI_IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL ?? "imagen-3.0-generate-001";
 
 function getGeminiApiKey() {
   if (!hasGeminiEnv()) return null;

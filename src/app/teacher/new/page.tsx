@@ -78,20 +78,34 @@ export default function NewSessionPage() {
   return (
     <main className="min-h-screen bg-[#fdcb40] px-5 py-5 text-black md:px-8 md:py-8">
       <div className="mx-auto max-w-7xl">
-        <Link
-          href="/teacher"
-          className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white px-5 py-3 text-sm font-bold text-black transition hover:-translate-y-0.5"
-        >
-          <ArrowLeft size={16} />
-          Dashboard
-        </Link>
+        <header className="flex flex-wrap items-center justify-between gap-4">
+          <Link
+            href="/teacher"
+            className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white px-5 py-3 text-sm font-bold text-black transition hover:-translate-y-0.5"
+          >
+            <ArrowLeft size={16} />
+            Dashboard
+          </Link>
+          <button
+            onClick={async () => {
+              const { getFirebaseClientServices } = await import("@/lib/firebase/client");
+              const { signOut } = await import("firebase/auth");
+              const { auth } = getFirebaseClientServices();
+              if (auth) {
+                await signOut(auth);
+              }
+              await fetch("/api/auth/logout", { method: "POST" });
+              router.push("/teacher");
+            }}
+            className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white px-5 py-2 text-sm font-bold text-black transition hover:-translate-y-0.5"
+          >
+            Sign out
+          </button>
+        </header>
 
         <section className="mt-10 grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
           <div>
-            <div className="mb-7 inline-flex items-center gap-2 rounded-full border-2 border-black bg-white px-4 py-2 text-sm font-bold">
-              <Sparkles size={16} className="text-[#006cff]" />
-              60 second setup
-            </div>
+
             <h1 className="display-type max-w-2xl text-[4.7rem] font-bold leading-[0.84] md:text-[7.3rem]">
               Thinking routines
             </h1>

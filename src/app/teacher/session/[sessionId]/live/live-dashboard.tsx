@@ -98,6 +98,23 @@ export default function LiveDashboard({ sessionId }: { sessionId: string }) {
   return (
     <main className="min-h-screen bg-[#fdcb40] px-5 py-5 text-black">
       <div className="mx-auto max-w-[1500px]">
+        <div className="flex w-full justify-end pb-2">
+          <button
+            onClick={async () => {
+              const { getFirebaseClientServices } = await import("@/lib/firebase/client");
+              const { signOut } = await import("firebase/auth");
+              const { auth } = getFirebaseClientServices();
+              if (auth) {
+                await signOut(auth);
+              }
+              await fetch("/api/auth/logout", { method: "POST" });
+              window.location.href = "/teacher";
+            }}
+            className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white px-5 py-2 text-sm font-bold text-black transition hover:-translate-y-0.5"
+          >
+            Sign out
+          </button>
+        </div>
         <header className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-black pb-5">
           <div>
             <Link
