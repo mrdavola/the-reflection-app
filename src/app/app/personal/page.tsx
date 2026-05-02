@@ -18,6 +18,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { RippleField } from "@/components/ambient";
 import { FOCUS_OPTIONS, getFocus } from "@/lib/focus-catalog";
 import { personalFlow, usePersonalFlow } from "@/lib/personal-flow-store";
@@ -33,6 +34,10 @@ export default function PersonalEntryPage() {
   const [focus, setFocus] = useState<FocusId | null>(null);
   const [objective, setObjective] = useState("");
   const [ttsEnabled, setTtsEnabled] = useState(false);
+  // Editable preview of the first question. Auto-syncs with focus + objective
+  // until the user edits it; after that, manual edits stick.
+  const [seedPrompt, setSeedPrompt] = useState("");
+  const [seedDirty, setSeedDirty] = useState(false);
 
   // Hydrate from store (returning mid-flow) and TTS pref from localStorage.
   useEffect(() => {
@@ -42,13 +47,24 @@ export default function PersonalEntryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Keep the preview in sync with focus + objective until the educator edits it.
+  useEffect(() => {
+    if (seedDirty) return;
+    if (!focus || !objective.trim()) {
+      setSeedPrompt("");
+      return;
+    }
+    setSeedPrompt(buildSeedPrompt(focus, objective.trim()));
+  }, [focus, objective, seedDirty]);
+
   const featured = useMemo(
     () => FOCUS_OPTIONS.filter((f) => FEATURED_FOCI.includes(f.id)),
     [],
   );
 
   const focusMeta = focus ? getFocus(focus) : null;
-  const canBegin = !!focus && objective.trim().length > 0;
+  const trimmedSeed = seedPrompt.trim();
+  const canBegin = !!focus && objective.trim().length > 0 && trimmedSeed.length > 0;
 
   function toggleTts() {
     const next = !ttsEnabled;
@@ -59,16 +75,21 @@ export default function PersonalEntryPage() {
   function begin() {
     if (!canBegin) return;
     const trimmedObjective = objective.trim();
-    const seedPrompt = buildSeedPrompt(focus!, trimmedObjective);
     personalFlow.set({
       objective: trimmedObjective,
       focus,
-      prompts: [seedPrompt],
+      prompts: [trimmedSeed],
       responses: [],
       analysis: null,
       takeaway: "",
     });
     router.push("/app/personal/run");
+  }
+
+  function resetSeedToDefault() {
+    if (!focus || !objective.trim()) return;
+    setSeedPrompt(buildSeedPrompt(focus, objective.trim()));
+    setSeedDirty(false);
   }
 
   return (
@@ -174,6 +195,42 @@ export default function PersonalEntryPage() {
             One line is enough. The rest comes when you start speaking.
           </p>
         </section>
+
+        {focus && objective.trim().length > 0 && (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <Label
+                htmlFor="seed-prompt"
+                className="margin-note uppercase tracking-[0.3em] text-[0.7rem]"
+              >
+                Your first question — preview & edit
+              </Label>
+              {seedDirty && (
+                <button
+                  type="button"
+                  onClick={resetSeedToDefault}
+                  className="text-[0.7rem] uppercase tracking-[0.3em] text-foreground/40 hover:text-foreground/80 transition-colors"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+            <Textarea
+              id="seed-prompt"
+              value={seedPrompt}
+              onChange={(e) => {
+                setSeedPrompt(e.target.value);
+                setSeedDirty(true);
+              }}
+              rows={3}
+              className="font-display text-[1.125rem] leading-[1.5] tracking-[-0.01em] min-h-[96px]"
+            />
+            <p className="text-[0.75rem] text-foreground/50">
+              This is what gets asked first. The next questions are generated from
+              what you actually say.
+            </p>
+          </section>
+        )}
 
         <section className="flex flex-wrap items-center justify-between gap-4 border-t border-border/60 pt-6">
           <button

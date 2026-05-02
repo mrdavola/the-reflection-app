@@ -33,6 +33,7 @@ export async function POST(req: Request) {
         focus: input.focus,
         count: input.count,
         language: input.language,
+        prior: input.prior,
       }),
       source: "mock",
     });
@@ -54,6 +55,7 @@ export async function POST(req: Request) {
         focus: input.focus,
         count: input.count,
         language: input.language,
+        prior: input.prior,
       }),
       source: "mock-fallback",
     });

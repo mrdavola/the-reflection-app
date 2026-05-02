@@ -76,13 +76,25 @@ export function mockPrompts(opts: {
   focus: string;
   count: number;
   language?: string;
+  /** Prior Q/A pairs so follow-ups can avoid repetition and reference what was just said. */
+  prior?: { promptText: string; text: string }[];
 }): string[] {
-  const { objective, focus, count } = opts;
+  const { objective, focus, count, prior } = opts;
   const es = isEs(opts.language);
+  const lastAnswer = prior?.[prior.length - 1]?.text ?? "";
+  const stem = pickStem(lastAnswer);
+
   if (es) {
     const subject =
       objective.length > 12 ? objective.replace(/\.$/, "") : ES.defaultSubject;
+    const stemPrompts = stem
+      ? [
+          `Cuando dijiste “${stem}”, ¿qué hay debajo de eso para ti?`,
+          `Mencionaste “${stem}” — ¿qué cambia si lo miras desde otro ángulo?`,
+        ]
+      : [];
     const candidates = [
+      ...stemPrompts,
       ES.prompt_clear(subject),
       ES.prompt_effort(subject),
       ES.prompt_friend,
@@ -90,10 +102,18 @@ export function mockPrompts(opts: {
       ES.prompt_next,
       ES.prompt_focus(focus.replace(/-/g, " ")),
     ];
-    return candidates.slice(0, count);
+    return pickUnique(candidates, prior, count);
   }
+
   const subject = objective.length > 12 ? objective.replace(/\.$/, "") : "what you're working on";
+  const stemPrompts = stem
+    ? [
+        `When you said “${stem}” — what's underneath that for you?`,
+        `You mentioned “${stem}.” What would change if that turned out to be only half the story?`,
+      ]
+    : [];
   const candidates = [
+    ...stemPrompts,
     `Looking at ${subject}, what feels most clear to you right now?`,
     `What part of ${subject.toLowerCase()} is taking the most effort, and why?`,
     `If a friend tried this for the first time, what is one piece of advice you'd give them?`,
@@ -101,7 +121,55 @@ export function mockPrompts(opts: {
     `What's one specific next step you can try in the next 24 hours?`,
     `Where could ${focus.replace(/-/g, " ")} push your thinking a little further?`,
   ];
-  return candidates.slice(0, count);
+  return pickUnique(candidates, prior, count);
+}
+
+/**
+ * Pull a short, substantive snippet from the most recent answer so the next
+ * mock prompt feels like it was actually listening. Skips conversational
+ * filler and openings; falls back to null when nothing usable is found.
+ */
+function pickStem(text: string): string | null {
+  if (!text) return null;
+  const cleaned = text
+    .replace(/\s+/g, " ")
+    .replace(/^(hey|hi|hello|um+|uh+|so|like|i mean|you know)[\s,]*/i, "")
+    .trim();
+  if (!cleaned) return null;
+  const sentences = cleaned
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.replace(/[.!?]+$/, "").trim())
+    .filter(Boolean);
+  for (const s of sentences) {
+    const words = s.split(/\s+/);
+    if (words.length >= 4 && words.length <= 14) return s;
+  }
+  // No sentence hits the sweet spot — clip the opening of the longest one.
+  const longest = sentences.sort((a, b) => b.length - a.length)[0] ?? cleaned;
+  const words = longest.split(/\s+/).slice(0, 12);
+  return words.join(" ");
+}
+
+/**
+ * Returns up to `count` candidates not already present in `prior`.
+ * Falls back to the candidate list when everything would otherwise be filtered.
+ */
+function pickUnique(
+  candidates: string[],
+  prior: { promptText: string }[] | undefined,
+  count: number,
+): string[] {
+  if (!prior || prior.length === 0) return candidates.slice(0, count);
+  const used = new Set(prior.map((p) => normalize(p.promptText)));
+  const fresh = candidates.filter((c) => !used.has(normalize(c)));
+  if (fresh.length >= count) return fresh.slice(0, count);
+  // Top up with originals if we filtered too aggressively.
+  const topUp = candidates.filter((c) => !fresh.includes(c)).slice(0, count - fresh.length);
+  return [...fresh, ...topUp];
+}
+
+function normalize(s: string): string {
+  return s.toLowerCase().replace(/\s+/g, " ").trim();
 }
 
 export function mockFeedback(opts: {
