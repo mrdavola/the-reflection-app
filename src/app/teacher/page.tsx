@@ -151,6 +151,7 @@ export default function TeacherPage() {
         </div>
 
         {isTeacherSession ? (
+          <>
           <section className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             <LaunchCard
               href="/teacher/exit-ticket/new"
@@ -210,6 +211,7 @@ export default function TeacherPage() {
               </div>
             </button>
           </section>
+          </>
         ) : null}
 
         <section className="mt-10 grid gap-4">
