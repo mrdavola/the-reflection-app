@@ -1,8 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-midnight-ink: #000000;
+  --color-paper-white: #ffffff;
+  --color-light-linen: #fff6ed;
+  --color-sunshine-yellow: #fdcb40;
+  --color-ocean-blue: #006cff;
+  --color-action-orange: #fd4401;
+  --color-grass-green: #00b351;
+  --color-bubblegum-pink: #f780d4;
+  --color-teal-splash: #04c6c5;
+  --color-pale-lemon: #fff2b7;
+  --color-grape-punch: #a864fd;
+  --color-soft-border: #000000;
+  --background: var(--color-sunshine-yellow);
+  --foreground: var(--color-midnight-ink);
 }
 
 @theme inline {
@@ -12,15 +24,33 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-outfit), Arial, Helvetica, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#006cff] focus-visible:ring-offset-2;
+}
+
+.panel {
+  @apply rounded-[24px] border-2 border-black bg-white;
+}
+
+.soft-panel {
+  @apply rounded-[24px] border-2 border-black bg-[#fff2b7];
+}
+
+.display-type {
+  font-family: var(--font-fredoka), var(--font-outfit), ui-sans-serif, system-ui;
+  letter-spacing: 0;
 }

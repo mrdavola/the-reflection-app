@@ -1,0 +1,35 @@
+import { z } from "zod";
+import { createSession, listSessions } from "@/lib/server/store";
+import { badRequest, ok, serverError } from "@/lib/server/http";
+
+const CreateSessionSchema = z.object({
+  title: z.string().optional(),
+  learningTarget: z.string().optional(),
+  gradeBand: z.string().optional(),
+  routineId: z.enum(["see-think-wonder", "exit-ticket-conversation"]).optional(),
+  exitTicketQuestion: z.string().optional(),
+  exitTicketContext: z.string().optional(),
+  exitTicketMaxTurns: z.number().int().min(2).max(5).optional(),
+  stimulus: z
+    .object({
+      kind: z.enum(["image", "text", "link", "none"]),
+      value: z.string(),
+    })
+    .optional(),
+});
+
+export async function GET() {
+  return ok({ sessions: await listSessions() });
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = CreateSessionSchema.safeParse(await request.json());
+    if (!body.success) return badRequest("Session payload is invalid.");
+
+    const session = await createSession(body.data);
+    return ok({ session }, { status: 201 });
+  } catch (error) {
+    return serverError(error);
+  }
+}

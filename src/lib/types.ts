@@ -1,0 +1,72 @@
+export type DepthLevel = "surface" | "developing" | "deep" | "transfer";
+export type RoutineStepLabel =
+  | "See"
+  | "Think"
+  | "Wonder"
+  | "Exit Ticket"
+  | "Follow-up 1"
+  | "Follow-up 2"
+  | "Follow-up 3";
+export type Tone = "engaged" | "neutral" | "disengaged" | "concerned";
+export type Mindset = "growth" | "neutral" | "fixed";
+export type AlertSeverity = "amber" | "red";
+
+export type RoutineStep = {
+  stepNumber: number;
+  label: RoutineStepLabel;
+  prompt: string;
+  studentCue: string;
+  followUpGuidance: string;
+};
+
+export type SessionConfig = {
+  aiFollowupsEnabled: boolean;
+  voiceMinimumSeconds: number;
+  responseMode: "voice" | "text" | "choice";
+  showTranscription: boolean;
+  studentResultsVisibility: "full" | "simplified" | "none";
+};
+
+export type ReflectionStep = {
+  label: RoutineStepLabel;
+  prompt?: string;
+  transcription: string;
+  depthLevel?: DepthLevel;
+  depthScore?: number;
+  followUpQuestion?: string | null;
+  directQuote?: string;
+  rating?: number;
+  ratingLabel?: DepthLevel;
+  teacherSummary?: string;
+};
+
+export type AlertCategory =
+  | "personal_safety"
+  | "self_harm"
+  | "violence"
+  | "abuse"
+  | "threat"
+  | "profanity"
+  | "low_depth"
+  | "negative_tone";
+
+export type SafetyAlert = {
+  severity: AlertSeverity;
+  category: AlertCategory;
+  title: string;
+  message: string;
+  matchedText?: string;
+};
+
+export type ThinkingMapCluster = {
+  label: string;
+  summary: string;
+  studentIds: string[];
+  representativeQuotes: string[];
+};
+
+export type ClassThinkingMap = {
+  see: ThinkingMapCluster[];
+  think: ThinkingMapCluster[];
+  wonder: ThinkingMapCluster[];
+};
