@@ -4,6 +4,8 @@ export type RoutineStepLabel =
   | "Think"
   | "Wonder"
   | "Exit Ticket"
+  | "Choice"
+  | "Reasoning"
   | "Follow-up 1"
   | "Follow-up 2"
   | "Follow-up 3";

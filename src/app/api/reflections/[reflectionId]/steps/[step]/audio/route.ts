@@ -26,7 +26,7 @@ export async function POST(
     const session = await getSession(reflection.sessionId);
     if (!session) return notFound("Session not found.");
 
-    const routineStep = getRoutineStep(stepNumber);
+    const routineStep = getRoutineStep(stepNumber, session.routineId);
     const transcript = await transcribeAudio(audio);
     const audioExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     const recordingUrl = await storeReflectionAudio({

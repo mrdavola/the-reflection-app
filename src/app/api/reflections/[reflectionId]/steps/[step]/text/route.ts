@@ -27,7 +27,7 @@ export async function POST(
     const session = await getSession(reflection.sessionId);
     if (!session) return notFound("Session not found.");
 
-    const routineStep = getRoutineStep(stepNumber);
+    const routineStep = getRoutineStep(stepNumber, session.routineId);
     const [analysis, alerts] = await Promise.all([
       analyzeStep({
         session,

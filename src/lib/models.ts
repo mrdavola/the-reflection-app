@@ -16,10 +16,11 @@ export type Stimulus = {
 export type Session = {
   id: string;
   teacherId: string;
-  routineId: "see-think-wonder" | "exit-ticket-conversation" | "quick-spin";
+  routineId: "see-think-wonder" | "exit-ticket-conversation" | "quick-spin" | "would-you-rather";
   title: string;
   learningTarget: string;
   gradeBand?: string;
+  wyrOptions?: { optionA: string; optionB: string };
   exitTicketQuestion?: string;
   exitTicketContext?: string;
   exitTicketMaxTurns?: number;

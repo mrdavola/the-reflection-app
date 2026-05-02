@@ -43,14 +43,42 @@ export const SEE_THINK_WONDER_ROUTINE = {
   ] satisfies RoutineStep[],
 };
 
-export function getRoutineStep(stepNumber: number) {
-  const step = SEE_THINK_WONDER_ROUTINE.steps.find(
+export const WOULD_YOU_RATHER_ROUTINE = {
+  id: "would-you-rather",
+  name: "Would You Rather",
+  description: "A quick-fire lesson starter where students choose between two scenarios and defend their reasoning.",
+  bestForTags: ["debate", "reasoning", "engagement"],
+  config: DEFAULT_SESSION_CONFIG,
+  steps: [
+    {
+      stepNumber: 1,
+      label: "Choice",
+      prompt: "Make your choice",
+      studentCue: "Tap Option A or Option B.",
+      followUpGuidance: "Wait to ask follow-ups until they explain their reasoning.",
+    },
+    {
+      stepNumber: 2,
+      label: "Reasoning",
+      prompt: "Why did you choose that?",
+      studentCue: "Explain your reasoning using details from the topic.",
+      followUpGuidance: "Push for a specific example or connection to the curriculum.",
+    },
+  ] satisfies RoutineStep[],
+};
+
+export function getRoutineStep(stepNumber: number, routineId?: string) {
+  const routineSteps = routineId === "would-you-rather" 
+    ? WOULD_YOU_RATHER_ROUTINE.steps 
+    : SEE_THINK_WONDER_ROUTINE.steps;
+
+  const step = routineSteps.find(
     (item) => item.stepNumber === stepNumber,
   );
 
   if (!step) {
-    throw new Error(`Unknown See Think Wonder step: ${stepNumber}`);
+    throw new Error(`Unknown step ${stepNumber} for routine ${routineId}`);
   }
 
-  return step;
+  return step as RoutineStep;
 }
