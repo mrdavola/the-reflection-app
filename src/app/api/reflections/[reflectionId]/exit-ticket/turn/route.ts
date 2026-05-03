@@ -30,8 +30,11 @@ export async function POST(
 
     const session = await getSession(reflection.sessionId);
     if (!session) return notFound("Session not found.");
-    if (session.routineId !== "exit-ticket-conversation") {
-      return badRequest("This reflection is not an exit ticket conversation.");
+    const supportsConversationTurns =
+      session.routineId === "exit-ticket-conversation" ||
+      session.routineId === "quick-spin";
+    if (!supportsConversationTurns) {
+      return badRequest("This reflection does not use conversation turns.");
     }
 
     const maxTurns = session.exitTicketMaxTurns ?? 4;
