@@ -42,6 +42,11 @@ export default function NewSessionPage() {
   const [generatingImage, setGeneratingImage] = useState(false);
   const [imageError, setImageError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [suggestions, setSuggestions] = useState<{ title: string; description: string; prompt: string }[] | null>(null);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [suggestionGradeBand, setSuggestionGradeBand] = useState("");
+  const [suggestionSubject, setSuggestionSubject] = useState("");
+  const [showCustomPrompt, setShowCustomPrompt] = useState(false);
 
   async function createSession() {
     setSubmitting(true);
@@ -71,13 +76,14 @@ export default function NewSessionPage() {
     }
   }
 
-  async function generateImage() {
+  async function generateImage(promptOverride?: string) {
+    const prompt = promptOverride ?? imagePrompt;
     setImageError("");
     setGeneratingImage(true);
     const response = await fetch("/api/images/stimulus", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: imagePrompt, learningTarget }),
+      body: JSON.stringify({ prompt, learningTarget }),
     });
     const data = await response.json();
     setGeneratingImage(false);
@@ -89,6 +95,35 @@ export default function NewSessionPage() {
 
     setStimulusImage(data.image.dataUrl);
     setStimulus("");
+  }
+
+  async function fetchSuggestions() {
+    setLoadingSuggestions(true);
+    setSuggestions(null);
+    setImageError("");
+    const response = await fetch("/api/images/suggest-prompts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        learningTarget,
+        gradeBand: suggestionGradeBand || undefined,
+        subject: suggestionSubject || undefined,
+      }),
+    });
+    const data = await response.json();
+    setLoadingSuggestions(false);
+
+    if (!response.ok) {
+      setImageError(data.error ?? "Could not generate suggestions.");
+      return;
+    }
+
+    setSuggestions(data.suggestions);
+  }
+
+  function selectSuggestion(prompt: string) {
+    setImagePrompt(prompt);
+    generateImage(prompt);
   }
 
   function uploadImage(file?: File) {
@@ -222,41 +257,144 @@ export default function NewSessionPage() {
 
               {imageMode === "generate" ? (
                 <div className="rounded-[24px] border-2 border-black bg-[#fff2b7] p-5">
-                  <div className="mb-4 flex flex-wrap gap-2">
-                    {STIMULUS_EXAMPLES.map((example) => (
+                  {!showCustomPrompt ? (
+                    <>
+                      <div className="mb-4 grid gap-3 sm:grid-cols-2">
+                        <label className="grid gap-1.5">
+                          <span className="text-xs font-black uppercase tracking-[0.08em]">
+                            Grade band (optional)
+                          </span>
+                          <select
+                            value={suggestionGradeBand}
+                            onChange={(e) => setSuggestionGradeBand(e.target.value)}
+                            className="focus-ring rounded-[18px] border-2 border-black bg-white px-4 py-3 text-sm font-black"
+                          >
+                            <option value="">Any grade</option>
+                            <option value="K-1">Grades K–1</option>
+                            <option value="2-5">Grades 2–5</option>
+                            <option value="6-8">Grades 6–8</option>
+                            <option value="9-12">Grades 9–12</option>
+                          </select>
+                        </label>
+                        <label className="grid gap-1.5">
+                          <span className="text-xs font-black uppercase tracking-[0.08em]">
+                            Subject (optional)
+                          </span>
+                          <input
+                            type="text"
+                            value={suggestionSubject}
+                            onChange={(e) => setSuggestionSubject(e.target.value)}
+                            placeholder="e.g. Science, ELA, History"
+                            className="focus-ring rounded-[18px] border-2 border-black bg-white px-4 py-3 text-sm font-black placeholder:text-black/40"
+                          />
+                        </label>
+                      </div>
+
                       <button
-                        key={example.title}
                         type="button"
-                        onClick={() => setImagePrompt(example.prompt)}
-                        className="focus-ring rounded-full border-2 border-black bg-white px-4 py-2 text-sm font-black"
+                        onClick={fetchSuggestions}
+                        disabled={loadingSuggestions || learningTarget.trim().length < 4}
+                        className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#006cff] px-6 py-3 font-black text-white disabled:opacity-50"
                       >
-                        {example.title}
+                        <Wand2 size={18} className={loadingSuggestions ? "animate-spin" : ""} />
+                        {loadingSuggestions ? "Thinking..." : "Suggest image prompts"}
                       </button>
-                    ))}
-                  </div>
-                  <label className="grid gap-2">
-                    <span className="text-sm font-black uppercase tracking-[0.08em]">
-                      Describe the image
-                    </span>
-                    <textarea
-                      value={imagePrompt}
-                      onChange={(event) => setImagePrompt(event.target.value)}
-                      placeholder="Example: a busy school garden after rain with students noticing patterns, tools, and puddles"
-                      className="focus-ring min-h-28 rounded-[20px] border-2 border-black bg-white px-5 py-4 text-lg font-semibold leading-7 placeholder:text-black/40"
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={generateImage}
-                    disabled={generatingImage || imagePrompt.trim().length < 8}
-                    className="focus-ring mt-4 inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#006cff] px-6 py-3 font-black text-white disabled:opacity-50"
-                  >
-                    <Wand2 size={18} />
-                    {generatingImage ? "Generating..." : "Generate image"}
-                  </button>
-                  {imageError ? (
-                    <p className="mt-3 font-black text-[#fd4401]">{imageError}</p>
-                  ) : null}
+
+                      {learningTarget.trim().length < 4 && (
+                        <p className="mt-2 text-sm font-bold text-black/50">
+                          Add a learning target above to enable suggestions.
+                        </p>
+                      )}
+
+                      {suggestions !== null && !loadingSuggestions && (
+                        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                          {suggestions.map((suggestion, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => selectSuggestion(suggestion.prompt)}
+                              disabled={generatingImage}
+                              className={`focus-ring rounded-[20px] border-2 border-black p-4 text-left transition hover:-translate-y-0.5 disabled:opacity-60 ${
+                                imagePrompt === suggestion.prompt && generatingImage
+                                  ? "bg-[#006cff] text-white"
+                                  : "bg-white"
+                              }`}
+                            >
+                              <p className="font-black leading-5">{suggestion.title}</p>
+                              <p className="mt-1.5 text-sm font-semibold leading-5 opacity-70">
+                                {suggestion.description}
+                              </p>
+                              {imagePrompt === suggestion.prompt && generatingImage && (
+                                <p className="mt-2 text-xs font-black opacity-80">Generating...</p>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {imageError ? (
+                        <p className="mt-3 font-black text-[#fd4401]">{imageError}</p>
+                      ) : null}
+
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomPrompt(true)}
+                        className="mt-4 text-sm font-black underline underline-offset-2"
+                      >
+                        Write my own prompt instead
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomPrompt(false)}
+                        className="mb-4 inline-flex items-center gap-1.5 text-sm font-black"
+                      >
+                        <ArrowLeft size={14} />
+                        Back to suggestions
+                      </button>
+
+                      <div className="mb-4 flex flex-wrap gap-2">
+                        {STIMULUS_EXAMPLES.map((example) => (
+                          <button
+                            key={example.title}
+                            type="button"
+                            onClick={() => setImagePrompt(example.prompt)}
+                            className="focus-ring rounded-full border-2 border-black bg-white px-4 py-2 text-sm font-black"
+                          >
+                            {example.title}
+                          </button>
+                        ))}
+                      </div>
+
+                      <label className="grid gap-2">
+                        <span className="text-sm font-black uppercase tracking-[0.08em]">
+                          Describe the image
+                        </span>
+                        <textarea
+                          value={imagePrompt}
+                          onChange={(event) => setImagePrompt(event.target.value)}
+                          placeholder="Example: a busy school garden after rain with students noticing patterns, tools, and puddles"
+                          className="focus-ring min-h-28 rounded-[20px] border-2 border-black bg-white px-5 py-4 text-lg font-semibold leading-7 placeholder:text-black/40"
+                        />
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={() => generateImage()}
+                        disabled={generatingImage || imagePrompt.trim().length < 8}
+                        className="focus-ring mt-4 inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#006cff] px-6 py-3 font-black text-white disabled:opacity-50"
+                      >
+                        <Wand2 size={18} />
+                        {generatingImage ? "Generating..." : "Generate image"}
+                      </button>
+
+                      {imageError ? (
+                        <p className="mt-3 font-black text-[#fd4401]">{imageError}</p>
+                      ) : null}
+                    </>
+                  )}
                 </div>
               ) : null}
 

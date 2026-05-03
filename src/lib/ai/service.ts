@@ -8,6 +8,7 @@ import {
   ReflectionAnalysisGeminiSchema,
   SafetyAlertsGeminiSchema,
   StepAnalysisGeminiSchema,
+  type GeminiSchema,
 } from "./gemini";
 import {
   ExitTicketQuestionSchema,
@@ -251,6 +252,85 @@ export async function generateStimulusImage(input: {
       model: "local-fallback",
     };
   }
+}
+
+const StimulusPromptSuggestionsGeminiSchema: GeminiSchema = {
+  type: "object",
+  properties: {
+    suggestions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          description: { type: "string" },
+          prompt: { type: "string" },
+        },
+        required: ["title", "description", "prompt"],
+        propertyOrdering: ["title", "description", "prompt"],
+      },
+    },
+  },
+  required: ["suggestions"],
+  propertyOrdering: ["suggestions"],
+};
+
+export type StimulusPromptSuggestion = {
+  title: string;
+  description: string;
+  prompt: string;
+};
+
+export async function generateStimulusPromptSuggestions(input: {
+  learningTarget: string;
+  gradeBand?: string;
+  subject?: string;
+}): Promise<StimulusPromptSuggestion[]> {
+  const geminiApiKey = getGeminiApiKey();
+
+  if (geminiApiKey) {
+    try {
+      const result = await generateGeminiStructured({
+        apiKey: geminiApiKey,
+        model: GEMINI_ANALYSIS_MODEL,
+        system:
+          "You suggest three distinct image prompts for a classroom See Think Wonder visual thinking routine. Each suggestion must work well for student observation, interpretation, and questioning. Images must be classroom-safe, contain no readable text, no people, no logos, and be appropriate for the specified grade level.",
+        prompt: [
+          `Learning target: ${input.learningTarget}`,
+          input.gradeBand ? `Grade band: ${input.gradeBand}` : null,
+          input.subject ? `Subject area: ${input.subject}` : null,
+          "Generate exactly 3 suggestions. Make them meaningfully different: e.g. a close-up detail scene, a wide contextual scene, and a conceptual or metaphorical scene.",
+          "Each needs: title (3-5 words), description (one teacher-facing sentence explaining why this works), and prompt (a detailed image generation prompt that produces a visually rich, classroom-safe scene with no readable text).",
+        ]
+          .filter(Boolean)
+          .join("\n"),
+        schema: StimulusPromptSuggestionsGeminiSchema,
+        parse: (val) =>
+          (val as { suggestions: StimulusPromptSuggestion[] }).suggestions,
+      });
+      return result;
+    } catch (error) {
+      console.warn("Gemini stimulus suggestions failed, falling back.", error);
+    }
+  }
+
+  return [
+    {
+      title: "Classroom observation scene",
+      description: "A rich scene with objects connected to the learning target for close observation.",
+      prompt: `A classroom-safe, detailed visual scene connected to: ${input.learningTarget}. Rich in observable details. No text, no people, no logos.`,
+    },
+    {
+      title: "Close-up details",
+      description: "A tight close-up revealing fine textures and patterns students can examine carefully.",
+      prompt: `A detailed close-up of objects or phenomena related to: ${input.learningTarget}. Many small details for students to notice. No text, no people.`,
+    },
+    {
+      title: "Real-world context",
+      description: "A real-world setting that connects the concept to everyday life.",
+      prompt: `A real-world outdoor or community scene illustrating: ${input.learningTarget}. Visually rich, student-friendly. No text, no people.`,
+    },
+  ];
 }
 
 export async function generateExitTicketQuestion(input: {

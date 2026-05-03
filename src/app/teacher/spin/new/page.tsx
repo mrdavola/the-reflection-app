@@ -23,7 +23,17 @@ const QUESTION_BANK = {
       "What made you feel proud today?",
       "Did you have fun? What made it fun?",
       "What is something you saw today that you liked?",
-      "If you could do today over, what would you do differently?"
+      "If you could do today over, what would you do differently?",
+      "What made you feel safe today?",
+      "Did you feel happy or sad today? Why?",
+      "What is something you want to share with your family?",
+      "What is something you got to choose today?",
+      "Did you like being at school today? Why?",
+      "What do you wish your teacher knew about today?",
+      "What would make tomorrow even better?",
+      "What is your favorite part of the school day?",
+      "Did anything feel hard or scary today?",
+      "What is one thing you are looking forward to?"
     ],
     academic: [
       "What did you make today?",
@@ -40,7 +50,17 @@ const QUESTION_BANK = {
       "What math did you do today?",
       "Did you write any words today? Which ones?",
       "What do you still want to know more about?",
-      "What tools did you use to learn today?"
+      "What tools did you use to learn today?",
+      "What was the most interesting thing you saw or heard?",
+      "Can you teach me something from today?",
+      "What question are you still wondering about?",
+      "What feels easier now than before?",
+      "What did you figure out on your own today?",
+      "What did your hands make or build today?",
+      "What words did you hear a lot today?",
+      "Did you learn something that surprised you?",
+      "What do you want to practice again?",
+      "What is something you want to get better at?"
     ],
     social: [
       "Did you share with a friend?",
@@ -57,7 +77,17 @@ const QUESTION_BANK = {
       "Did you listen when a friend was talking?",
       "Did you and a friend disagree about something? What happened?",
       "Who in your class do you want to get to know better?",
-      "How did you show you cared about someone today?"
+      "How did you show you cared about someone today?",
+      "Did you say sorry to anyone today?",
+      "Who would you like to play with more?",
+      "Did you take turns today?",
+      "What is something nice you noticed about a classmate?",
+      "Did you feel part of the group today?",
+      "Did anyone help you today without you asking?",
+      "Did you make someone feel better today?",
+      "How do you think a friend felt today?",
+      "How did you show respect today?",
+      "Who made your day better?"
     ],
     growth: [
       "Did you try your best?",
@@ -74,7 +104,17 @@ const QUESTION_BANK = {
       "What is something you are getting better at?",
       "Did you make a mistake? What did you learn from it?",
       "What does 'trying your best' look like for you?",
-      "What is something you want to practice more?"
+      "What is something you want to practice more?",
+      "Was there something you wanted to quit? Did you?",
+      "Did you do something that was new for you?",
+      "What is getting easier and easier for you?",
+      "What do you want your teacher to help you with?",
+      "Did you surprise yourself today?",
+      "What is something you worked really hard on?",
+      "What made you feel brave today?",
+      "How did you take care of yourself today?",
+      "What is something you are proud of?",
+      "What do you want to get better at?"
     ]
   },
   "25": {
@@ -93,7 +133,17 @@ const QUESTION_BANK = {
       "Did anything go better than you expected?",
       "What took more energy than you thought it would?",
       "What is something you'd tell a friend about today?",
-      "If you gave today a grade, what would it be and why?"
+      "If you gave today a grade, what would it be and why?",
+      "What question are you leaving with today?",
+      "What was something unexpected that happened?",
+      "What helped you focus today?",
+      "What was your biggest win today?",
+      "What were you most curious about today?",
+      "What would you highlight from today if you could only pick one thing?",
+      "What do you wish you'd done differently?",
+      "Did anything happen today that you want to think more about?",
+      "What made today feel worth showing up for?",
+      "What is something you learned that you didn't expect to?"
     ],
     academic: [
       "What new word did you learn today?",
@@ -110,7 +160,17 @@ const QUESTION_BANK = {
       "If you had to teach today's lesson, where would you start?",
       "Did you take notes? Were they helpful?",
       "What evidence did you use to support your thinking?",
-      "Was there a moment where everything 'clicked'? When?"
+      "Was there a moment where everything 'clicked'? When?",
+      "What concept feels clearest to you right now?",
+      "What topic from today connects to another subject?",
+      "What step in your work felt most important?",
+      "What is a question you would ask the teacher right now?",
+      "Did anything in the lesson click for you? What was it?",
+      "What was the most important word or phrase from today?",
+      "What would you add to your notes if you could?",
+      "What is something you learned that changes how you think?",
+      "What part of the lesson would you explain to a parent?",
+      "What is something you worked out in your head today?"
     ],
     social: [
       "How did you help a classmate?",
@@ -127,7 +187,17 @@ const QUESTION_BANK = {
       "Did you give feedback to a partner today? What did you say?",
       "How did your group share the work?",
       "Who in your class deserves a compliment today?",
-      "Did you feel heard by your group? Why or why not?"
+      "Did you feel heard by your group? Why or why not?",
+      "How did you make your group feel welcome?",
+      "When did you feel like part of a team today?",
+      "Did you share credit with a classmate today?",
+      "What did you notice about how someone else was feeling?",
+      "How did you make the classroom a better place today?",
+      "Was there a moment you held back? What would you say now?",
+      "Did you stand up for someone or something today?",
+      "Did you notice when a friend was struggling? What did you do?",
+      "What is one way you made someone feel good today?",
+      "How did you work through a problem with someone else?"
     ],
     growth: [
       "What was your favorite mistake today?",
@@ -144,7 +214,17 @@ const QUESTION_BANK = {
       "When did you feel most confident today?",
       "What risk did you take today?",
       "What is something you are proud you didn't give up on?",
-      "What advice would you give a younger student about learning?"
+      "What advice would you give a younger student about learning?",
+      "Where do you still feel uncertain?",
+      "What is one thing you're proud you figured out on your own?",
+      "Did you push yourself today or coast? How do you feel about that?",
+      "What feedback did you receive and what will you do with it?",
+      "What would make you even more confident in this skill?",
+      "When did you notice yourself getting better at something?",
+      "What distractions did you overcome today?",
+      "What is one small next step you can take tomorrow?",
+      "What is something you did today that your past self would be proud of?",
+      "What does your best look like — and did you show it today?"
     ]
   },
   "68": {
@@ -163,7 +243,17 @@ const QUESTION_BANK = {
       "What do you think the teacher most wanted you to learn?",
       "Was today's work too easy, just right, or too hard?",
       "What connection did you make between class and the real world?",
-      "What would you put on a 'highlight reel' of today?"
+      "What would you put on a 'highlight reel' of today?",
+      "What question lingered with you all class?",
+      "Was today what you expected? What surprised you?",
+      "What made today feel worth showing up for?",
+      "What is one thing you'll still be thinking about tonight?",
+      "What would you tell a student who just transferred into this class?",
+      "What part of today would you cut if you were the teacher?",
+      "What is the most honest thing you could say about today?",
+      "What do you understand now that you didn't when class started?",
+      "If today had a theme, what would it be?",
+      "What is something today revealed about how you think?"
     ],
     academic: [
       "Identify one area where you need more practice.",
@@ -180,7 +270,17 @@ const QUESTION_BANK = {
       "What is the difference between what you thought you knew and what you now know?",
       "What question would you put on a quiz about today's topic?",
       "What was the hardest part of the task intellectually?",
-      "How did you use feedback to improve your work?"
+      "How did you use feedback to improve your work?",
+      "What is the simplest way you could explain today's big idea?",
+      "What is the most complex part of today that still confuses you?",
+      "What strategy did you use that you'd use again?",
+      "What knowledge from outside school helped you today?",
+      "What did the teacher not say that you think was important?",
+      "What is something you need to review before the next class?",
+      "What did you notice about your learning process today?",
+      "If today's lesson were a chapter title, what would it be?",
+      "What would a test on today's material look like?",
+      "What is something you learned that shifts how you see this topic?"
     ],
     social: [
       "What role did you play in your group today?",
@@ -197,7 +297,17 @@ const QUESTION_BANK = {
       "How did you help the group stay on track?",
       "Who in the class thinks differently from you? What can you learn from them?",
       "Did you build on someone else's idea today?",
-      "What does 'being a good collaborator' mean to you after today?"
+      "What does 'being a good collaborator' mean to you after today?",
+      "How did you handle a moment when you felt unheard?",
+      "Did you take more space or give more space in your group?",
+      "Did you take credit you deserved? Why or why not?",
+      "What would you do differently as a team member?",
+      "How did you respond when something felt unfair?",
+      "What did you learn about how someone communicates differently than you?",
+      "How did your group's tone affect the work?",
+      "Did you feel safe being wrong today? Why or why not?",
+      "What made collaboration easier or harder today?",
+      "Who did you learn the most from today, and what did you learn?"
     ],
     growth: [
       "When did you feel frustrated today, and how did you handle it?",
@@ -214,7 +324,17 @@ const QUESTION_BANK = {
       "What is your biggest obstacle to learning in this class?",
       "How do you typically respond to feedback, and is that helpful?",
       "What goal feels out of reach but worth working toward?",
-      "What would you attempt if you knew you couldn't fail?"
+      "What would you attempt if you knew you couldn't fail?",
+      "What is one belief about your abilities that today tested?",
+      "When did you feel like giving up? What made you keep going?",
+      "What is a pattern in your work that you keep noticing?",
+      "What would it take for you to feel truly confident in this area?",
+      "What small thing made a big difference today?",
+      "What did you do today that was outside your comfort zone?",
+      "How do you talk to yourself when things get hard?",
+      "What is one thing you could stop doing that would make you a better learner?",
+      "What does progress look like for you right now?",
+      "What is something you are proud you pushed through today?"
     ]
   },
   "912": {
@@ -233,7 +353,17 @@ const QUESTION_BANK = {
       "If today's class were a headline, what would it say?",
       "What is the cost of not mastering what was taught today?",
       "What would a skeptic say about the ideas discussed today?",
-      "How are you different as a thinker than you were at the start of this unit?"
+      "How are you different as a thinker than you were at the start of this unit?",
+      "What are the implications of today's content beyond this class?",
+      "What was the most intellectually honest thing said today?",
+      "What question would you bring to a panel of experts on this topic?",
+      "How did today's class change — or not change — what you believe?",
+      "What is the most counterintuitive thing from today?",
+      "What part of today will still matter to you in five years?",
+      "What trade-offs were visible in today's topic or process?",
+      "What did today reveal about how you engage with difficult ideas?",
+      "What is something today complicated that you thought you understood?",
+      "If you had to write a one-sentence reflection, what would it say?"
     ],
     academic: [
       "Assess your time management honestly: efficient or distracted?",
@@ -250,7 +380,17 @@ const QUESTION_BANK = {
       "What did you produce today, and does it reflect your best thinking?",
       "What questions remain open that you think are worth exploring further?",
       "How has your understanding of this topic evolved over the unit?",
-      "What real-world decision or problem does this learning help you solve?"
+      "What real-world decision or problem does this learning help you solve?",
+      "What is the most important assumption underlying today's argument or method?",
+      "What would a peer reviewer say about your work today?",
+      "How has your framework for understanding this topic shifted?",
+      "What question would move this conversation — or this field — forward?",
+      "What limitations does the method or framework taught today have?",
+      "How does what you learned today connect to a broader theory or principle?",
+      "What is the most elegant or surprising idea you encountered today?",
+      "What does it mean to truly master this content?",
+      "How might someone from a different background interpret today's material?",
+      "What secondary sources or perspectives are missing from today's lesson?"
     ],
     social: [
       "How did you contribute to the learning of others today?",
@@ -267,7 +407,17 @@ const QUESTION_BANK = {
       "Did you listen to understand or listen to respond?",
       "What would you want your group members to know about how you work best?",
       "How did your identity or background shape how you engaged today?",
-      "What does 'psychological safety' feel like, and did your group have it today?"
+      "What does 'psychological safety' feel like, and did your group have it today?",
+      "How did today challenge you to think beyond your own experience?",
+      "Who was the most intellectually generous person in the room today?",
+      "What was left unsaid in today's discussion that should have been said?",
+      "How did you balance confidence and humility in your contributions?",
+      "What would have made the conversation in class richer?",
+      "When did you notice yourself closing down instead of opening up?",
+      "What does accountability look like in your class or group?",
+      "How did your group handle uncertainty or disagreement productively?",
+      "What assumptions about others were revealed in today's discussion?",
+      "What does the way your group worked today say about your class culture?"
     ],
     growth: [
       "What was the 'tipping point' where this started making sense?",
@@ -284,7 +434,17 @@ const QUESTION_BANK = {
       "When is the last time you were truly intellectually uncomfortable? What came from it?",
       "What belief about yourself as a learner might be holding you back?",
       "What does it look like when you are operating at your best?",
-      "What is one concrete thing you will do differently tomorrow?"
+      "What is one concrete thing you will do differently tomorrow?",
+      "What is the relationship between your effort and your results in this class?",
+      "What is the most honest thing you can say about your learning right now?",
+      "What do you need to unlearn to get better in this area?",
+      "How has your definition of 'good work' changed over this course?",
+      "What is the gap between how you present yourself as a learner and who you actually are?",
+      "What does failure teach you that success doesn't?",
+      "What is one commitment you're making to yourself for the rest of this course?",
+      "What would mastery look like for you — and how far are you from it?",
+      "What would you do differently if you started this unit over today?",
+      "What is holding you back right now, and is it within your control?"
     ]
   }
 };
@@ -318,33 +478,24 @@ export default function SpinPage() {
   const [grade, setGrade] = useState<keyof typeof QUESTION_BANK>("25");
   const [category, setCategory] = useState<"general" | "academic" | "social" | "growth">("general");
   const [question, setQuestion] = useState(INITIAL_SPIN_QUESTION);
-  const [isSpinning, setIsSpinning] = useState(false);
-  const [hasSpun, setHasSpun] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [error, setError] = useState("");
 
   const spin = useCallback(() => {
-    if (isSpinning) return;
-    setIsSpinning(true);
-    setHasSpun(true);
+    setQuestion(pickQuestion(grade, category));
     setError("");
-
-    setTimeout(() => {
-      setQuestion(pickQuestion(grade, category));
-      setIsSpinning(false);
-    }, 400);
-  }, [category, grade, isSpinning]);
+  }, [category, grade]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.code === 'Space' || e.key === ' ') && !isSpinning && document.activeElement?.tagName !== 'BUTTON') {
+      if ((e.code === 'Space' || e.key === ' ') && document.activeElement?.tagName !== 'BUTTON') {
         e.preventDefault();
         spin();
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isSpinning, spin]);
+  }, [spin]);
 
   async function launchSession() {
     setLaunching(true);
@@ -429,7 +580,6 @@ export default function SpinPage() {
                     const nextGrade = e.target.value as keyof typeof QUESTION_BANK;
                     setGrade(nextGrade);
                     setQuestion(pickQuestion(nextGrade, category));
-                    setHasSpun(true);
                     setError("");
                   }}
                   className="focus-ring rounded-[24px] border-2 border-black bg-white px-5 py-4 text-xl font-black"
@@ -452,7 +602,6 @@ export default function SpinPage() {
                       const nextCategory = cat.id as typeof category;
                       setCategory(nextCategory);
                       setQuestion(pickQuestion(grade, nextCategory));
-                      setHasSpun(true);
                       setError("");
                     }}
                     className={`focus-ring inline-flex items-center gap-2 rounded-full border-2 border-black px-5 py-3 text-sm font-black transition hover:-translate-y-0.5 ${
@@ -490,23 +639,20 @@ export default function SpinPage() {
             <div className="grid gap-3 md:grid-cols-2">
               <button
                 onClick={spin}
-                disabled={isSpinning}
-                className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#006cff] px-7 py-4 text-lg font-black text-white transition hover:-translate-y-0.5 disabled:opacity-50"
+                className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#006cff] px-7 py-4 text-lg font-black text-white transition hover:-translate-y-0.5"
               >
-                <RefreshCcw size={20} className={isSpinning ? 'animate-spin' : ''} />
+                <RefreshCcw size={20} />
                 Spin again
               </button>
 
-              {hasSpun && !isSpinning ? (
-                <button
-                  onClick={launchSession}
-                  disabled={launching}
-                  className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#fd4401] px-7 py-4 text-lg font-black text-white transition hover:-translate-y-0.5 disabled:opacity-50"
-                >
-                  <Check size={20} />
-                  {launching ? "Launching..." : "Launch this question"}
-                </button>
-              ) : null}
+              <button
+                onClick={launchSession}
+                disabled={launching}
+                className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#fd4401] px-7 py-4 text-lg font-black text-white transition hover:-translate-y-0.5 disabled:opacity-50"
+              >
+                <Check size={20} />
+                {launching ? "Launching..." : "Launch this question"}
+              </button>
             </div>
           </div>
         </section>
