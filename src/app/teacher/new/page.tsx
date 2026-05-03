@@ -3,8 +3,31 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ImagePlus, Rocket, Upload, Wand2 } from "lucide-react";
+import { ArrowLeft, ImagePlus, MousePointer2, Rocket, Upload, Wand2 } from "lucide-react";
 import { AccountMenu } from "../account-menu";
+
+const STIMULUS_EXAMPLES = [
+  {
+    title: "School garden",
+    prompt:
+      "A busy school garden after rain with students noticing patterns, tools, puddles, leaves, soil, and sunlight. No text.",
+  },
+  {
+    title: "Science phenomenon",
+    prompt:
+      "A clear classroom-safe image of an unusual science phenomenon with magnets, paper clips, shadows, and measurement tools. No text.",
+  },
+  {
+    title: "Historical artifact",
+    prompt:
+      "A classroom-safe historical artifact table with a map, worn objects, photographs, and clues from daily life. No text or readable labels.",
+  },
+  {
+    title: "Data scene",
+    prompt:
+      "A visual scene showing patterns in weather, plants, containers, and water levels that students can observe closely. No text.",
+  },
+];
 
 export default function NewSessionPage() {
   const router = useRouter();
@@ -15,6 +38,7 @@ export default function NewSessionPage() {
   const [imagePrompt, setImagePrompt] = useState("");
   const [imageMode, setImageMode] = useState<"generate" | "upload" | "text">("generate");
   const [voiceMinimumSeconds, setVoiceMinimumSeconds] = useState(5);
+  const [annotationMode, setAnnotationMode] = useState(true);
   const [generatingImage, setGeneratingImage] = useState(false);
   const [imageError, setImageError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -35,6 +59,7 @@ export default function NewSessionPage() {
         stimulus: stimulusPayload,
         config: {
           voiceMinimumSeconds,
+          annotationMode,
         },
       }),
     });
@@ -166,6 +191,16 @@ export default function NewSessionPage() {
                 <ImagePlus size={18} />
                 Stimulus
               </span>
+              <div className="rounded-[24px] border-2 border-black bg-white p-5">
+                <p className="text-sm font-black uppercase tracking-[0.08em]">
+                  Project Zero launch frame
+                </p>
+                <p className="mt-2 text-lg font-bold leading-7">
+                  Students observe first, then interpret with evidence, then name
+                  questions that remain. Annotation mode lets them point to the
+                  exact part of the image that sparked their thinking.
+                </p>
+              </div>
               <div className="grid gap-2 sm:grid-cols-3">
                 {[
                   ["generate", "AI image"],
@@ -187,6 +222,18 @@ export default function NewSessionPage() {
 
               {imageMode === "generate" ? (
                 <div className="rounded-[24px] border-2 border-black bg-[#fff2b7] p-5">
+                  <div className="mb-4 flex flex-wrap gap-2">
+                    {STIMULUS_EXAMPLES.map((example) => (
+                      <button
+                        key={example.title}
+                        type="button"
+                        onClick={() => setImagePrompt(example.prompt)}
+                        className="focus-ring rounded-full border-2 border-black bg-white px-4 py-2 text-sm font-black"
+                      >
+                        {example.title}
+                      </button>
+                    ))}
+                  </div>
                   <label className="grid gap-2">
                     <span className="text-sm font-black uppercase tracking-[0.08em]">
                       Describe the image
@@ -257,6 +304,44 @@ export default function NewSessionPage() {
                 </div>
               ) : null}
             </div>
+            <section className="grid gap-3">
+              <span className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.08em]">
+                <MousePointer2 size={18} />
+                Student response style
+              </span>
+              <div className="grid gap-3 md:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => setAnnotationMode(true)}
+                  className={`focus-ring rounded-[24px] border-2 border-black p-5 text-left ${
+                    annotationMode ? "bg-[#04c6c5]" : "bg-white"
+                  }`}
+                >
+                  <p className="display-type text-3xl font-bold">
+                    Annotate image
+                  </p>
+                  <p className="mt-2 text-sm font-black leading-5">
+                    Students tap the image, add sticky notes by voice or typing,
+                    then move through See, Think, Wonder.
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAnnotationMode(false)}
+                  className={`focus-ring rounded-[24px] border-2 border-black p-5 text-left ${
+                    !annotationMode ? "bg-[#fff2b7]" : "bg-white"
+                  }`}
+                >
+                  <p className="display-type text-3xl font-bold">
+                    Voice or type
+                  </p>
+                  <p className="mt-2 text-sm font-black leading-5">
+                    Students respond to each routine step without placing pins on
+                    the image.
+                  </p>
+                </button>
+              </div>
+            </section>
             <label className="grid gap-2">
               <span className="text-sm font-black uppercase tracking-[0.08em]">
                 Voice minimum

@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { MouseEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, Keyboard, MessageCircle, Mic, Send, Square } from "lucide-react";
+import { ArrowRight, Keyboard, MessageCircle, Mic, MousePointer2, Send, Square, StickyNote, X } from "lucide-react";
+import { buildAnnotationTranscript, getAnnotationCue } from "@/lib/annotations";
 import type { Session } from "@/lib/models";
 import type { ExitTicketTurnAnalysis } from "@/lib/ai/schemas";
 import { SEE_THINK_WONDER_ROUTINE, WOULD_YOU_RATHER_ROUTINE } from "@/lib/routines";
+import type { AnnotationNote, RoutineStepLabel } from "@/lib/types";
 
 type Mode = "voice" | "text";
 type StudentSessionPayload = {
@@ -199,6 +202,25 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
     await handleStepResponse(response, transcription);
   }
 
+  async function submitAnnotationStep(annotations: AnnotationNote[]) {
+    const transcription = buildAnnotationTranscript(step.label, annotations);
+    setSubmitting(true);
+    setError("");
+    const response = await fetch(
+      `/api/reflections/${reflectionId}/steps/${step.stepNumber}/text`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          participantToken: token,
+          transcription,
+          annotations,
+        }),
+      },
+    );
+    await handleStepResponse(response, transcription);
+  }
+
   async function handleStepResponse(response: Response, fallbackTranscript = text) {
     const data = await response.json();
     setSubmitting(false);
@@ -316,13 +338,18 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
   const promptText = studentSession.session.routineId === "would-you-rather" && stepIndex === 1
     ? `You chose ${transcripts[0]?.split(": ")[1] ?? "that option"}. Explain your reasoning.`
     : step.prompt;
+  const usesAnnotationMode =
+    studentSession.session.routineId === "see-think-wonder" &&
+    studentSession.session.config.annotationMode &&
+    studentSession.session.stimulus.kind === "image" &&
+    Boolean(studentSession.session.stimulus.value);
 
   return (
     <main className="min-h-screen bg-[#fdcb40] px-5 py-6 text-black" data-session-id={sessionId}>
       <section className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[1fr_320px]">
         <div className="panel p-6 md:p-10">
           <p className="inline-flex rounded-full border-2 border-black bg-[#04c6c5] px-4 py-2 text-sm font-black uppercase tracking-[0.08em]">
-            Step {step.stepNumber} of 3
+            Step {step.stepNumber} of {routineDef.steps.length}
           </p>
           <h1 className="display-type mt-5 text-[3rem] font-bold leading-[0.85] sm:text-[4rem] md:text-[4.5rem]">
             {promptText}
@@ -331,76 +358,88 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
             {step.studentCue}
           </p>
 
-          <StimulusBlock stimulus={studentSession.session.stimulus} />
-
-          <div className="mt-8 flex gap-2">
-            <button
-              onClick={() => setMode("voice")}
-              className={`focus-ring inline-flex items-center gap-2 rounded-full border-2 border-black px-5 py-3 font-black ${
-                mode === "voice" ? "bg-[#006cff] text-white" : "bg-white"
-              }`}
-            >
-              <Mic size={18} />
-              Voice
-            </button>
-            <button
-              onClick={() => setMode("text")}
-              className={`focus-ring inline-flex items-center gap-2 rounded-full border-2 border-black px-5 py-3 font-black ${
-                mode === "text" ? "bg-[#006cff] text-white" : "bg-white"
-              }`}
-            >
-              <Keyboard size={18} />
-              Type
-            </button>
-          </div>
-
-          {mode === "voice" ? (
-            <div className="mt-8 rounded-[24px] border-2 border-black bg-[#fff2b7] p-6 text-center">
-              <button
-                onClick={recording ? stopAndSubmitAudio : startRecording}
-                disabled={submitting || (recording && seconds < voiceMinimumSeconds)}
-                className={`focus-ring mx-auto grid size-40 place-items-center rounded-full border-2 border-black text-white transition hover:-translate-y-0.5 ${
-                  recording ? "bg-[#fd4401]" : "bg-[#006cff]"
-                } disabled:opacity-50`}
-              >
-                {recording ? <Square size={42} /> : <Mic size={48} />}
-              </button>
-              <p className="display-type mt-5 text-5xl font-bold">{seconds}s</p>
-              <p className="mt-2 text-lg font-bold">
-                {recording
-                  ? seconds < voiceMinimumSeconds
-                    ? `Keep going for at least ${voiceMinimumSeconds} seconds.`
-                    : "You can stop when your thought feels complete."
-                  : voiceMinimumSeconds > 0
-                    ? `Tap the microphone and speak for at least ${voiceMinimumSeconds} seconds.`
-                    : "Tap the microphone and speak your thinking."}
-              </p>
-              {voiceTranscript ? (
-                <div className="mt-5 rounded-[20px] border-2 border-black bg-white p-4 text-left">
-                  <p className="text-xs font-black uppercase tracking-[0.08em]">
-                    We heard
-                  </p>
-                  <p className="mt-2 text-lg font-bold leading-7">{voiceTranscript}</p>
-                </div>
-              ) : null}
-            </div>
+          {usesAnnotationMode ? (
+            <AnnotationWorkspace
+              key={step.label}
+              imageUrl={studentSession.session.stimulus.value}
+              stepLabel={step.label}
+              submitting={submitting}
+              onSubmit={submitAnnotationStep}
+            />
           ) : (
-            <div className="mt-8">
-              <textarea
-                value={text}
-                onChange={(event) => setText(event.target.value)}
-                className="focus-ring min-h-56 w-full rounded-[24px] border-2 border-black bg-white p-5 text-xl font-semibold leading-8"
-                placeholder="Type your thinking here..."
-              />
-              <button
-                onClick={submitText}
-                disabled={submitting || text.trim().length < 3}
-                className="focus-ring mt-4 inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#fd4401] px-7 py-4 font-bold text-white transition hover:-translate-y-0.5 disabled:opacity-50"
-              >
-                Submit step
-                <Send size={18} />
-              </button>
-            </div>
+            <>
+              <StimulusBlock stimulus={studentSession.session.stimulus} />
+
+              <div className="mt-8 flex gap-2">
+                <button
+                  onClick={() => setMode("voice")}
+                  className={`focus-ring inline-flex items-center gap-2 rounded-full border-2 border-black px-5 py-3 font-black ${
+                    mode === "voice" ? "bg-[#006cff] text-white" : "bg-white"
+                  }`}
+                >
+                  <Mic size={18} />
+                  Voice
+                </button>
+                <button
+                  onClick={() => setMode("text")}
+                  className={`focus-ring inline-flex items-center gap-2 rounded-full border-2 border-black px-5 py-3 font-black ${
+                    mode === "text" ? "bg-[#006cff] text-white" : "bg-white"
+                  }`}
+                >
+                  <Keyboard size={18} />
+                  Type
+                </button>
+              </div>
+
+              {mode === "voice" ? (
+                <div className="mt-8 rounded-[24px] border-2 border-black bg-[#fff2b7] p-6 text-center">
+                  <button
+                    onClick={recording ? stopAndSubmitAudio : startRecording}
+                    disabled={submitting || (recording && seconds < voiceMinimumSeconds)}
+                    className={`focus-ring mx-auto grid size-40 place-items-center rounded-full border-2 border-black text-white transition hover:-translate-y-0.5 ${
+                      recording ? "bg-[#fd4401]" : "bg-[#006cff]"
+                    } disabled:opacity-50`}
+                  >
+                    {recording ? <Square size={42} /> : <Mic size={48} />}
+                  </button>
+                  <p className="display-type mt-5 text-5xl font-bold">{seconds}s</p>
+                  <p className="mt-2 text-lg font-bold">
+                    {recording
+                      ? seconds < voiceMinimumSeconds
+                        ? `Keep going for at least ${voiceMinimumSeconds} seconds.`
+                        : "You can stop when your thought feels complete."
+                      : voiceMinimumSeconds > 0
+                        ? `Tap the microphone and speak for at least ${voiceMinimumSeconds} seconds.`
+                        : "Tap the microphone and speak your thinking."}
+                  </p>
+                  {voiceTranscript ? (
+                    <div className="mt-5 rounded-[20px] border-2 border-black bg-white p-4 text-left">
+                      <p className="text-xs font-black uppercase tracking-[0.08em]">
+                        We heard
+                      </p>
+                      <p className="mt-2 text-lg font-bold leading-7">{voiceTranscript}</p>
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="mt-8">
+                  <textarea
+                    value={text}
+                    onChange={(event) => setText(event.target.value)}
+                    className="focus-ring min-h-56 w-full rounded-[24px] border-2 border-black bg-white p-5 text-xl font-semibold leading-8"
+                    placeholder="Type your thinking here..."
+                  />
+                  <button
+                    onClick={submitText}
+                    disabled={submitting || text.trim().length < 3}
+                    className="focus-ring mt-4 inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#fd4401] px-7 py-4 font-bold text-white transition hover:-translate-y-0.5 disabled:opacity-50"
+                  >
+                    Submit step
+                    <Send size={18} />
+                  </button>
+                </div>
+              )}
+            </>
           )}
           {submitting ? <p className="mt-4 font-black text-[#006cff]">Making your thinking visible...</p> : null}
           {error ? <p className="mt-4 font-black text-[#fd4401]">{error}</p> : null}
@@ -474,6 +513,231 @@ function StimulusBlock({
     <div className="mt-8 rounded-[24px] border-2 border-black bg-[#fff2b7] p-5">
       <p className="text-sm font-black uppercase tracking-[0.08em]">Stimulus</p>
       <p className="mt-2 text-xl font-bold leading-8">{stimulus.value}</p>
+    </div>
+  );
+}
+
+function AnnotationWorkspace({
+  imageUrl,
+  stepLabel,
+  submitting,
+  onSubmit,
+}: {
+  imageUrl: string;
+  stepLabel: RoutineStepLabel;
+  submitting: boolean;
+  onSubmit: (annotations: AnnotationNote[]) => Promise<void>;
+}) {
+  const [annotations, setAnnotations] = useState<AnnotationNote[]>([]);
+  const [draftPoint, setDraftPoint] = useState<{ x: number; y: number } | null>(null);
+  const [draftText, setDraftText] = useState("");
+  const [draftMode, setDraftMode] = useState<Mode>("text");
+  const [listening, setListening] = useState(false);
+  const annotationsRef = useRef<AnnotationNote[]>([]);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+
+  function choosePoint(event: MouseEvent<HTMLDivElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+    setDraftPoint({
+      x: Math.min(100, Math.max(0, x)),
+      y: Math.min(100, Math.max(0, y)),
+    });
+    setDraftText("");
+    setDraftMode("text");
+  }
+
+  function chooseCenterPoint() {
+    setDraftPoint({ x: 50, y: 50 });
+    setDraftText("");
+    setDraftMode("text");
+  }
+
+  function addNote() {
+    if (!draftPoint || draftText.trim().length < 2) return;
+    const nextNote = {
+      id:
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${Date.now()}-${annotationsRef.current.length}`,
+      x: Math.round(draftPoint.x * 10) / 10,
+      y: Math.round(draftPoint.y * 10) / 10,
+      text: draftText.trim(),
+      mode: draftMode,
+    };
+    const nextAnnotations = [...annotationsRef.current, nextNote];
+    annotationsRef.current = nextAnnotations;
+    setAnnotations(nextAnnotations);
+    setDraftPoint(null);
+    setDraftText("");
+  }
+
+  function startDraftVoice() {
+    const SpeechRecognition = getSpeechRecognition();
+    if (!SpeechRecognition) {
+      setDraftMode("text");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+    recognition.onresult = (event) => setDraftText(collectSpeechTranscript(event));
+    recognition.onend = () => setListening(false);
+    recognition.start();
+    setDraftMode("voice");
+    setListening(true);
+  }
+
+  function stopDraftVoice() {
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+    setListening(false);
+  }
+
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.stop();
+    };
+  }, []);
+
+  return (
+    <div className="mt-8 grid gap-5">
+      <div className="rounded-[24px] border-2 border-black bg-[#fff2b7] p-4">
+        <p className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.08em]">
+          <MousePointer2 size={18} />
+          Annotation mode
+        </p>
+        <p className="mt-2 text-lg font-black leading-7">
+          Tap the image, add a sticky note, then submit your {stepLabel} notes.
+        </p>
+      </div>
+
+      <div
+        className="relative overflow-hidden rounded-[24px] border-2 border-black bg-white"
+        onClick={choosePoint}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            chooseCenterPoint();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label={`Add a ${stepLabel} sticky note to the image`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={imageUrl} alt="Reflection stimulus" className="w-full object-cover" />
+        {annotations.map((annotation, index) => (
+          <button
+            key={annotation.id}
+            type="button"
+            onClick={(event) => event.stopPropagation()}
+            className="absolute grid size-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-black bg-[#fdcb40] text-sm font-black"
+            style={{ left: `${annotation.x}%`, top: `${annotation.y}%` }}
+            title={annotation.text}
+          >
+            {index + 1}
+          </button>
+        ))}
+        {draftPoint ? (
+          <div
+            className="absolute grid size-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-black bg-[#fd4401] text-sm font-black text-white"
+            style={{ left: `${draftPoint.x}%`, top: `${draftPoint.y}%` }}
+          >
+            +
+          </div>
+        ) : null}
+      </div>
+
+      {draftPoint ? (
+        <div className="rounded-[24px] border-2 border-black bg-white p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.08em]">
+                <StickyNote size={18} />
+                Sticky note
+              </p>
+              <p className="mt-2 text-lg font-black leading-7">
+                {getAnnotationCue(stepLabel)}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDraftPoint(null)}
+              className="focus-ring grid size-10 place-items-center rounded-full border-2 border-black bg-white"
+              aria-label="Cancel note"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setDraftMode("text")}
+              className={`focus-ring inline-flex items-center gap-2 rounded-full border-2 border-black px-5 py-3 font-black ${
+                draftMode === "text" ? "bg-[#006cff] text-white" : "bg-white"
+              }`}
+            >
+              <Keyboard size={18} />
+              Type
+            </button>
+            <button
+              type="button"
+              onClick={listening ? stopDraftVoice : startDraftVoice}
+              className={`focus-ring inline-flex items-center gap-2 rounded-full border-2 border-black px-5 py-3 font-black ${
+                draftMode === "voice" ? "bg-[#006cff] text-white" : "bg-white"
+              }`}
+            >
+              <Mic size={18} />
+              {listening ? "Stop voice" : "Voice"}
+            </button>
+          </div>
+
+          <textarea
+            value={draftText}
+            onChange={(event) => setDraftText(event.target.value)}
+            className="focus-ring mt-4 min-h-28 w-full rounded-[20px] border-2 border-black bg-[#fff2b7] p-4 text-lg font-black leading-7"
+            placeholder="Add your sticky note here..."
+          />
+          <button
+            type="button"
+            onClick={addNote}
+            disabled={draftText.trim().length < 2}
+            className="focus-ring mt-3 rounded-full border-2 border-black bg-[#fd4401] px-6 py-3 font-black text-white disabled:opacity-50"
+          >
+            Save sticky note
+          </button>
+        </div>
+      ) : null}
+
+      <div className="grid gap-3">
+        {annotations.map((annotation, index) => (
+          <div
+            key={annotation.id}
+            className="rounded-[20px] border-2 border-black bg-white p-4"
+          >
+            <p className="text-xs font-black uppercase tracking-[0.08em]">
+              Note {index + 1} · {annotation.mode}
+            </p>
+            <p className="mt-2 text-lg font-black leading-7">{annotation.text}</p>
+          </div>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => onSubmit(annotationsRef.current)}
+        disabled={submitting || annotations.length === 0}
+        className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#fd4401] px-7 py-4 font-black text-white disabled:opacity-50"
+      >
+        {submitting ? "Submitting notes..." : `Submit ${stepLabel} notes`}
+        <Send size={18} />
+      </button>
     </div>
   );
 }

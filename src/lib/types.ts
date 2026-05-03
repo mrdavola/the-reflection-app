@@ -21,9 +21,18 @@ export type RoutineStep = {
   followUpGuidance: string;
 };
 
+export type AnnotationNote = {
+  id: string;
+  x: number;
+  y: number;
+  text: string;
+  mode: "voice" | "text";
+};
+
 export type SessionConfig = {
   aiFollowupsEnabled: boolean;
   voiceMinimumSeconds: number;
+  annotationMode: boolean;
   responseMode: "voice" | "text" | "choice";
   showTranscription: boolean;
   studentResultsVisibility: "full" | "simplified" | "none";
@@ -40,6 +49,7 @@ export type ReflectionStep = {
   rating?: number;
   ratingLabel?: DepthLevel;
   teacherSummary?: string;
+  annotations?: AnnotationNote[];
 };
 
 export type AlertCategory =

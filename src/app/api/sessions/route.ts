@@ -22,6 +22,7 @@ const CreateSessionSchema = z.object({
   config: z
     .object({
       voiceMinimumSeconds: z.number().int().min(0).max(60).optional(),
+      annotationMode: z.boolean().optional(),
     })
     .optional(),
   stimulus: z

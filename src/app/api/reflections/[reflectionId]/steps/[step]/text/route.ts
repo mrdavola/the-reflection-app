@@ -7,6 +7,17 @@ import { getReflection, getSession, submitReflectionStep } from "@/lib/server/st
 const TextStepSchema = z.object({
   participantToken: z.string().min(1),
   transcription: z.string().min(1),
+  annotations: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        x: z.number().min(0).max(100),
+        y: z.number().min(0).max(100),
+        text: z.string().min(1),
+        mode: z.enum(["voice", "text"]),
+      }),
+    )
+    .optional(),
 });
 
 export async function POST(
@@ -46,6 +57,7 @@ export async function POST(
         depthLevel: analysis.depthLevel,
         depthScore: analysis.depthScore,
         followUpQuestion: analysis.followUpQuestion ?? null,
+        annotations: body.data.annotations,
       },
       alerts,
     });

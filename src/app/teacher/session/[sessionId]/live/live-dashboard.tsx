@@ -335,6 +335,13 @@ export default function LiveDashboard({ sessionId }: { sessionId: string }) {
                 </div>
                 <Lightbulb className="text-[#006cff]" />
               </div>
+              {session.routineId === "see-think-wonder" &&
+              session.stimulus.kind === "image" ? (
+                <AnnotationOverlay
+                  imageUrl={session.stimulus.value}
+                  reflections={reflections}
+                />
+              ) : null}
               <div className="mt-5 grid gap-4 lg:grid-cols-3">
                 {(["see", "think", "wonder"] as const).map((key) => (
                   <div key={key} className="soft-panel min-h-[420px] p-4">
@@ -473,6 +480,99 @@ function StimulusPreview({
         </p>
       )}
     </section>
+  );
+}
+
+function AnnotationOverlay({
+  imageUrl,
+  reflections,
+}: {
+  imageUrl: string;
+  reflections: DashboardPayload["reflections"];
+}) {
+  const annotations = reflections.flatMap((reflection) =>
+    reflection.steps.flatMap((step) =>
+      (step.annotations ?? []).map((annotation) => ({
+        ...annotation,
+        label: step.label,
+        displayName: reflection.displayName,
+      })),
+    ),
+  );
+
+  if (annotations.length === 0) {
+    return (
+      <div className="mt-5 rounded-[24px] border-2 border-black bg-[#fff2b7] p-5">
+        <p className="text-sm font-black uppercase tracking-[0.08em]">
+          Image annotations
+        </p>
+        <p className="mt-2 text-lg font-bold">
+          Student sticky notes will appear on the stimulus image as they submit.
+        </p>
+      </div>
+    );
+  }
+
+  const colors: Record<string, string> = {
+    See: "bg-[#04c6c5]",
+    Think: "bg-[#006cff] text-white",
+    Wonder: "bg-[#f780d4]",
+  };
+
+  return (
+    <div className="mt-5 rounded-[24px] border-2 border-black bg-[#fff2b7] p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-black uppercase tracking-[0.08em]">
+            Image annotations
+          </p>
+          <p className="text-lg font-black">
+            {annotations.length} sticky notes across the class
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs font-black uppercase">
+          {["See", "Think", "Wonder"].map((label) => (
+            <span
+              key={label}
+              className={`rounded-full border-2 border-black px-3 py-1 ${colors[label]}`}
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_260px]">
+        <div className="relative overflow-hidden rounded-[20px] border-2 border-black bg-white">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={imageUrl} alt="Annotated stimulus" className="w-full object-cover" />
+          {annotations.map((annotation, index) => (
+            <span
+              key={`${annotation.id}-${index}`}
+              className={`absolute grid size-8 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-black text-xs font-black ${
+                colors[annotation.label] ?? "bg-white"
+              }`}
+              style={{ left: `${annotation.x}%`, top: `${annotation.y}%` }}
+              title={`${annotation.displayName}: ${annotation.text}`}
+            >
+              {index + 1}
+            </span>
+          ))}
+        </div>
+        <div className="max-h-[420px] space-y-2 overflow-auto pr-1">
+          {annotations.slice(0, 12).map((annotation, index) => (
+            <article
+              key={`${annotation.id}-list-${index}`}
+              className="rounded-[18px] border-2 border-black bg-white p-3"
+            >
+              <p className="text-xs font-black uppercase tracking-[0.08em]">
+                {index + 1}. {annotation.label} · {annotation.displayName}
+              </p>
+              <p className="mt-1 text-sm font-bold leading-5">{annotation.text}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
