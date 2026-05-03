@@ -150,6 +150,14 @@ export default function TeacherPage() {
           <>
           <section className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             <LaunchCard
+              href="/teacher/spin/new"
+              icon={<Sparkles size={26} />}
+              title="Quick Spin"
+              kicker="Randomized prompt"
+              body="Project a spinner, select a category, and generate a random reflection question to launch."
+              color="bg-[#04c6c5] text-black"
+            />
+            <LaunchCard
               href="/teacher/exit-ticket/new"
               icon={<MessageCircle size={26} />}
               title="Quick Reflection"
@@ -164,14 +172,6 @@ export default function TeacherPage() {
               kicker="Thinking routine"
               body="Launch the visible thinking routine with an uploaded, linked, text, or AI-generated stimulus."
               color="bg-[#fd4401] text-white"
-            />
-            <LaunchCard
-              href="/teacher/spin/new"
-              icon={<Sparkles size={26} />}
-              title="Quick Spin"
-              kicker="Randomized prompt"
-              body="Project a spinner, select a category, and generate a random reflection question to launch."
-              color="bg-[#04c6c5] text-black"
             />
             <LaunchCard
               href="/teacher/wyr/new"

@@ -4,7 +4,7 @@ import { ArrowRight, QrCode, Sparkles } from "lucide-react";
 export default function Home() {
   return (
     <main className="min-h-screen bg-[#fdcb40] px-5 py-6 text-black md:px-8">
-      <section className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col justify-between">
+      <section className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col">
         <nav className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="grid size-12 place-items-center rounded-[16px] border-2 border-black bg-[#04c6c5] text-black">
@@ -21,7 +21,8 @@ export default function Home() {
           </Link>
         </nav>
 
-        <div className="grid items-center gap-10 py-14 lg:grid-cols-[1fr_460px]">
+        <div className="flex flex-1 flex-col justify-center">
+          <div className="grid items-center gap-10 py-14 lg:grid-cols-[1fr_460px]">
           <div>
             <h1 className="display-type max-w-4xl text-[4.6rem] font-bold leading-[0.82] md:text-[7.8rem]">
               Make every student’s thinking visible.
@@ -80,6 +81,7 @@ export default function Home() {
                 writing their claim.
               </p>
             </div>
+          </div>
           </div>
         </div>
       </section>
