@@ -240,6 +240,10 @@ export async function generateStimulusImage(input: {
       model: GEMINI_IMAGE_MODEL,
     };
   } catch (error) {
+    if (geminiApiKey) {
+      throw error;
+    }
+
     console.warn("Gemini image generation failed, falling back.", error);
     return {
       dataUrl: fallbackStimulusDataUrl(input.prompt),
