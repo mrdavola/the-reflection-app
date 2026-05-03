@@ -20,7 +20,12 @@ export type Session = {
   title: string;
   learningTarget: string;
   gradeBand?: string;
-  wyrOptions?: { optionA: string; optionB: string };
+  wyrOptions?: {
+    optionA: string;
+    optionB: string;
+    optionAImageUrl?: string;
+    optionBImageUrl?: string;
+  };
   exitTicketQuestion?: string;
   exitTicketContext?: string;
   exitTicketMaxTurns?: number;

@@ -8,7 +8,14 @@ const CreateSessionSchema = z.object({
   learningTarget: z.string().optional(),
   gradeBand: z.string().optional(),
   routineId: z.enum(["see-think-wonder", "exit-ticket-conversation", "quick-spin", "would-you-rather"]).optional(),
-  wyrOptions: z.object({ optionA: z.string(), optionB: z.string() }).optional(),
+  wyrOptions: z
+    .object({
+      optionA: z.string(),
+      optionB: z.string(),
+      optionAImageUrl: z.string().optional(),
+      optionBImageUrl: z.string().optional(),
+    })
+    .optional(),
   exitTicketQuestion: z.string().optional(),
   exitTicketContext: z.string().optional(),
   exitTicketMaxTurns: z.number().int().min(2).max(5).optional(),

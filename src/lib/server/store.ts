@@ -15,7 +15,7 @@ type CreateSessionInput = {
   exitTicketQuestion?: string;
   exitTicketContext?: string;
   exitTicketMaxTurns?: number;
-  wyrOptions?: { optionA: string; optionB: string };
+  wyrOptions?: Session["wyrOptions"];
   config?: Partial<SessionConfig>;
   stimulus?: Stimulus;
 };

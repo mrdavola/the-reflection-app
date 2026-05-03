@@ -63,3 +63,35 @@ export async function storeReflectionAudio(input: {
 
   return `gs://${bucket.name}/${path}`;
 }
+
+export async function storeGeneratedImage(input: {
+  path: string;
+  dataUrl: string;
+  expiresAt?: Date;
+}) {
+  const bucket = getAdminBucket();
+  if (!bucket) return null;
+
+  const match = input.dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) return null;
+
+  const [, contentType, base64] = match;
+  const storageFile = bucket.file(input.path);
+
+  await storageFile.save(Buffer.from(base64, "base64"), {
+    contentType,
+    resumable: false,
+    metadata: {
+      cacheControl: "public, max-age=2592000",
+    },
+  });
+
+  const [url] = await storageFile.getSignedUrl({
+    action: "read",
+    expires:
+      input.expiresAt ??
+      new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+  });
+
+  return url;
+}

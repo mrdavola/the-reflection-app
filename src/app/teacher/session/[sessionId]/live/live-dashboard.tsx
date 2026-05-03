@@ -552,18 +552,36 @@ function WyrScoreboard({
         </div>
       </header>
       <div className="grid md:grid-cols-2 gap-0 border-4 border-black rounded-[3rem] overflow-hidden shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-        <div className="bg-[#04c6c5] p-10 flex flex-col items-center justify-center text-center relative border-b-4 md:border-b-0 md:border-r-4 border-black min-h-[300px]">
-          <span className="text-2xl font-black uppercase tracking-widest text-black/50 mb-2">Option A</span>
-          <p className="display-type text-4xl sm:text-5xl font-bold mb-6">{opts?.optionA}</p>
-          <div className="mt-auto">
+        <div className="bg-[#04c6c5] flex flex-col text-center relative border-b-4 md:border-b-0 md:border-r-4 border-black min-h-[520px]">
+          {opts?.optionAImageUrl ? (
+            <img
+              src={opts.optionAImageUrl}
+              alt=""
+              className="h-64 w-full border-b-4 border-black object-cover"
+            />
+          ) : null}
+          <div className="flex flex-1 flex-col items-center justify-center p-8">
+            <span className="text-xl font-black uppercase tracking-widest text-black/50 mb-2">Option A</span>
+            <p className="display-type text-3xl sm:text-4xl font-bold mb-6">{opts?.optionA}</p>
+          </div>
+          <div className="px-8 pb-8">
             <span className="display-type text-8xl font-bold leading-none">{pctA}%</span>
             <p className="font-black text-2xl uppercase tracking-widest text-black/70 mt-2">{countA} votes</p>
           </div>
         </div>
-        <div className="bg-[#9b51e0] text-white p-10 flex flex-col items-center justify-center text-center relative min-h-[300px]">
-          <span className="text-2xl font-black uppercase tracking-widest text-white/50 mb-2">Option B</span>
-          <p className="display-type text-4xl sm:text-5xl font-bold mb-6">{opts?.optionB}</p>
-          <div className="mt-auto">
+        <div className="bg-[#9b51e0] text-white flex flex-col text-center relative min-h-[520px]">
+          {opts?.optionBImageUrl ? (
+            <img
+              src={opts.optionBImageUrl}
+              alt=""
+              className="h-64 w-full border-b-4 border-black object-cover"
+            />
+          ) : null}
+          <div className="flex flex-1 flex-col items-center justify-center p-8">
+            <span className="text-xl font-black uppercase tracking-widest text-white/50 mb-2">Option B</span>
+            <p className="display-type text-3xl sm:text-4xl font-bold mb-6">{opts?.optionB}</p>
+          </div>
+          <div className="px-8 pb-8">
             <span className="display-type text-8xl font-bold leading-none">{pctB}%</span>
             <p className="font-black text-2xl uppercase tracking-widest text-white/70 mt-2">{countB} votes</p>
           </div>

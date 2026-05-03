@@ -275,19 +275,37 @@ export default function StudentRoutine({ sessionId }: { sessionId: string }) {
           <button 
             disabled={submitting}
             onClick={() => submitRoutineText(`Option A: ${opts?.optionA}`)}
-            className="focus-ring group rounded-[3rem] border-4 border-black bg-white p-10 hover:bg-[#04c6c5] transition-all hover:-translate-y-2 text-left disabled:opacity-50 min-h-[300px] flex flex-col justify-center shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]"
+            className="focus-ring group overflow-hidden rounded-[3rem] border-4 border-black bg-white hover:bg-[#04c6c5] transition-all hover:-translate-y-2 text-left disabled:opacity-50 min-h-[420px] flex flex-col shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]"
           >
-            <span className="text-xl font-black uppercase tracking-widest text-slate-400 group-hover:text-black/50 mb-4 block">Option A</span>
-            <p className="display-type text-4xl sm:text-5xl font-bold leading-tight group-hover:text-black">{opts?.optionA}</p>
+            {opts?.optionAImageUrl ? (
+              <img
+                src={opts.optionAImageUrl}
+                alt=""
+                className="h-56 w-full border-b-4 border-black object-cover"
+              />
+            ) : null}
+            <div className="flex flex-1 flex-col justify-center p-8">
+              <span className="text-xl font-black uppercase tracking-widest text-slate-400 group-hover:text-black/50 mb-4 block">Option A</span>
+              <p className="display-type text-3xl sm:text-4xl font-bold leading-tight group-hover:text-black">{opts?.optionA}</p>
+            </div>
           </button>
           
           <button 
             disabled={submitting}
             onClick={() => submitRoutineText(`Option B: ${opts?.optionB}`)}
-            className="focus-ring group rounded-[3rem] border-4 border-black bg-white p-10 hover:bg-[#9b51e0] transition-all hover:-translate-y-2 text-left disabled:opacity-50 min-h-[300px] flex flex-col justify-center shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:text-white"
+            className="focus-ring group overflow-hidden rounded-[3rem] border-4 border-black bg-white hover:bg-[#9b51e0] transition-all hover:-translate-y-2 text-left disabled:opacity-50 min-h-[420px] flex flex-col shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:text-white"
           >
-            <span className="text-xl font-black uppercase tracking-widest text-slate-400 group-hover:text-white/50 mb-4 block">Option B</span>
-            <p className="display-type text-4xl sm:text-5xl font-bold leading-tight">{opts?.optionB}</p>
+            {opts?.optionBImageUrl ? (
+              <img
+                src={opts.optionBImageUrl}
+                alt=""
+                className="h-56 w-full border-b-4 border-black object-cover"
+              />
+            ) : null}
+            <div className="flex flex-1 flex-col justify-center p-8">
+              <span className="text-xl font-black uppercase tracking-widest text-slate-400 group-hover:text-white/50 mb-4 block">Option B</span>
+              <p className="display-type text-3xl sm:text-4xl font-bold leading-tight">{opts?.optionB}</p>
+            </div>
           </button>
         </div>
         {submitting && <p className="mt-8 text-2xl font-black text-black animate-pulse">Locking in your choice...</p>}

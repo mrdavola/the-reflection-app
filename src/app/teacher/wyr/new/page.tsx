@@ -20,6 +20,7 @@ export default function WyrSetupPage() {
   const [generating, setGenerating] = useState(false);
   const [options, setOptions] = useState<WyrQuestion[] | null>(null);
   const [launching, setLaunching] = useState(false);
+  const [launchingIndex, setLaunchingIndex] = useState<number | null>(null);
   const [error, setError] = useState("");
 
   async function generateOptions(e: React.FormEvent) {
@@ -44,11 +45,29 @@ export default function WyrSetupPage() {
     }
   }
 
-  async function launchSession(question: WyrQuestion) {
+  async function launchSession(question: WyrQuestion, index: number) {
     setLaunching(true);
+    setLaunchingIndex(index);
     setError("");
 
     try {
+      const imageResponse = await fetch("/api/wyr/images", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          optionA: question.optionA,
+          optionB: question.optionB,
+          gradeLevel: grade,
+          subject,
+          topic,
+          vibe: question.vibe,
+        }),
+      });
+      const imageData = await imageResponse.json();
+      if (!imageResponse.ok) {
+        throw new Error(imageData.error ?? "Could not generate scenario images.");
+      }
+
       const response = await fetch("/api/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -57,7 +76,12 @@ export default function WyrSetupPage() {
           title: "Would You Rather",
           gradeBand: grade,
           learningTarget: `A ${question.vibe} "Would you rather" about ${topic}`,
-          wyrOptions: { optionA: question.optionA, optionB: question.optionB },
+          wyrOptions: {
+            optionA: question.optionA,
+            optionB: question.optionB,
+            optionAImageUrl: imageData.images.optionAImageUrl,
+            optionBImageUrl: imageData.images.optionBImageUrl,
+          },
         }),
       });
       
@@ -68,6 +92,7 @@ export default function WyrSetupPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Launch failed.");
       setLaunching(false);
+      setLaunchingIndex(null);
     }
   }
 
@@ -198,12 +223,14 @@ export default function WyrSetupPage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => launchSession(q)}
+                    onClick={() => launchSession(q, idx)}
                     disabled={launching}
                     className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-[#fd4401] px-7 py-4 text-lg font-black text-white transition hover:-translate-y-0.5 disabled:opacity-50"
                   >
                     <Check size={20} />
-                    {launching ? "Launching..." : "Launch this scenario"}
+                    {launching && launchingIndex === idx
+                      ? "Making images and launching..."
+                      : "Launch this scenario"}
                   </button>
                 </div>
               ))}
