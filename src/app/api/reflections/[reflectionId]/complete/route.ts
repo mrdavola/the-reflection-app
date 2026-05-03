@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { analyzeCompletedReflection } from "@/lib/ai/service";
+import { SEE_THINK_WONDER_ROUTINE, WOULD_YOU_RATHER_ROUTINE } from "@/lib/routines";
 import { badRequest, notFound, ok, serverError } from "@/lib/server/http";
-import { completeReflection, getReflection } from "@/lib/server/store";
+import { completeReflection, getReflection, getSession } from "@/lib/server/store";
 
 const CompleteSchema = z.object({
   participantToken: z.string().min(1),
@@ -18,7 +19,17 @@ export async function POST(
 
     const reflection = await getReflection(reflectionId);
     if (!reflection) return notFound("Reflection not found.");
-    if (reflection.steps.length < 3) return badRequest("All three steps are required.");
+
+    const session = await getSession(reflection.sessionId);
+    if (!session) return notFound("Session not found.");
+
+    const requiredSteps =
+      session.routineId === "would-you-rather"
+        ? WOULD_YOU_RATHER_ROUTINE.steps.length
+        : SEE_THINK_WONDER_ROUTINE.steps.length;
+    if (reflection.steps.length < requiredSteps) {
+      return badRequest(`All ${requiredSteps} steps are required.`);
+    }
 
     const analysis = await analyzeCompletedReflection(reflection);
     const completed = await completeReflection({
