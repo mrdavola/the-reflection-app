@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, BookOpen, Brain, Check, RefreshCcw, Sparkles, Users } from "lucide-react";
+import { AccountMenu } from "../../account-menu";
 
 const QUESTION_BANK = {
   "k1": {
@@ -158,34 +159,37 @@ const CATEGORIES = [
   { id: 'growth', label: 'Growth', icon: Brain }
 ];
 
+const INITIAL_SPIN_QUESTION = QUESTION_BANK["25"].general[0];
+
+function pickQuestion(
+  grade: keyof typeof QUESTION_BANK,
+  category: "general" | "academic" | "social" | "growth",
+) {
+  const pool = QUESTION_BANK[grade][category];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 export default function SpinPage() {
   const router = useRouter();
   const [grade, setGrade] = useState<keyof typeof QUESTION_BANK>("25");
   const [category, setCategory] = useState<"general" | "academic" | "social" | "growth">("general");
-  const [question, setQuestion] = useState("Loading...");
+  const [question, setQuestion] = useState(INITIAL_SPIN_QUESTION);
   const [isSpinning, setIsSpinning] = useState(false);
   const [hasSpun, setHasSpun] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [error, setError] = useState("");
 
-  const spin = () => {
+  const spin = useCallback(() => {
     if (isSpinning) return;
     setIsSpinning(true);
     setHasSpun(true);
     setError("");
 
     setTimeout(() => {
-      const pool = QUESTION_BANK[grade][category];
-      const newQuestion = pool[Math.floor(Math.random() * pool.length)];
-      setQuestion(newQuestion);
+      setQuestion(pickQuestion(grade, category));
       setIsSpinning(false);
     }, 400);
-  };
-
-  useEffect(() => {
-    spin();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [grade, category]);
+  }, [category, grade, isSpinning]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -196,7 +200,7 @@ export default function SpinPage() {
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isSpinning]);
+  }, [isSpinning, spin]);
 
   async function launchSession() {
     setLaunching(true);
@@ -242,8 +246,8 @@ export default function SpinPage() {
             <ArrowLeft size={16} />
             Dashboard
           </Link>
-          <button
-            onClick={async () => {
+          <AccountMenu
+            onSignOut={async () => {
               const { getFirebaseClientServices } = await import("@/lib/firebase/client");
               const { signOut } = await import("firebase/auth");
               const { auth } = getFirebaseClientServices();
@@ -253,10 +257,7 @@ export default function SpinPage() {
               await fetch("/api/auth/logout", { method: "POST" });
               router.push("/teacher");
             }}
-            className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white px-5 py-2 text-sm font-bold text-black transition hover:-translate-y-0.5"
-          >
-            Sign out
-          </button>
+          />
         </header>
 
         <section className="mt-10 grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
@@ -280,7 +281,13 @@ export default function SpinPage() {
                 </span>
                 <select
                   value={grade}
-                  onChange={(e) => setGrade(e.target.value as keyof typeof QUESTION_BANK)}
+                  onChange={(e) => {
+                    const nextGrade = e.target.value as keyof typeof QUESTION_BANK;
+                    setGrade(nextGrade);
+                    setQuestion(pickQuestion(nextGrade, category));
+                    setHasSpun(true);
+                    setError("");
+                  }}
                   className="focus-ring rounded-[24px] border-2 border-black bg-white px-5 py-4 text-xl font-black"
                 >
                   {GRADES.map(g => (
@@ -297,7 +304,13 @@ export default function SpinPage() {
                 return (
                   <button
                     key={cat.id}
-                    onClick={() => setCategory(cat.id as typeof category)}
+                    onClick={() => {
+                      const nextCategory = cat.id as typeof category;
+                      setCategory(nextCategory);
+                      setQuestion(pickQuestion(grade, nextCategory));
+                      setHasSpun(true);
+                      setError("");
+                    }}
                     className={`focus-ring inline-flex items-center gap-2 rounded-full border-2 border-black px-5 py-3 text-sm font-black transition hover:-translate-y-0.5 ${
                       isActive
                         ? "bg-[#006cff] text-white"

@@ -123,12 +123,6 @@ export async function generateGeminiImage(input: {
       },
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text: input.prompt }] }],
-        generationConfig: {
-          responseModalities: ["Image"],
-          imageConfig: {
-            aspectRatio: "3:2",
-          },
-        },
       }),
     },
   );

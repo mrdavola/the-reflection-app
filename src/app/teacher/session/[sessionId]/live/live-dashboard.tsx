@@ -12,6 +12,7 @@ import {
   QrCode,
   Users,
 } from "lucide-react";
+import { AccountMenu } from "@/app/teacher/account-menu";
 import { getPriorityCards, getTeacherNextMove } from "@/lib/actionability";
 import type { DashboardPayload } from "@/lib/models";
 
@@ -99,8 +100,8 @@ export default function LiveDashboard({ sessionId }: { sessionId: string }) {
     <main className="min-h-screen bg-[#fdcb40] px-5 py-5 text-black">
       <div className="mx-auto max-w-[1500px]">
         <div className="flex w-full justify-end pb-2">
-          <button
-            onClick={async () => {
+          <AccountMenu
+            onSignOut={async () => {
               const { getFirebaseClientServices } = await import("@/lib/firebase/client");
               const { signOut } = await import("firebase/auth");
               const { auth } = getFirebaseClientServices();
@@ -110,10 +111,7 @@ export default function LiveDashboard({ sessionId }: { sessionId: string }) {
               await fetch("/api/auth/logout", { method: "POST" });
               window.location.href = "/teacher";
             }}
-            className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white px-5 py-2 text-sm font-bold text-black transition hover:-translate-y-0.5"
-          >
-            Sign out
-          </button>
+          />
         </div>
         {session.routineId === "would-you-rather" ? (
           <WyrScoreboard session={session} reflections={reflections} qr={qr} copyShare={copyShare} shareUrl={shareUrl} copied={copied} />
@@ -502,11 +500,27 @@ function Rating({ rating }: { rating: number }) {
   );
 }
 
-function WyrScoreboard({ session, reflections, qr, copyShare, shareUrl, copied }: any) {
+type WyrScoreboardProps = {
+  session: DashboardPayload["session"];
+  reflections: DashboardPayload["reflections"];
+  qr: string;
+  copyShare: (value: string, kind: "code" | "link") => Promise<void>;
+  shareUrl: string;
+  copied: "code" | "link" | null;
+};
+
+function WyrScoreboard({
+  session,
+  reflections,
+  qr,
+  copyShare,
+  shareUrl,
+  copied,
+}: WyrScoreboardProps) {
   const opts = session.wyrOptions;
   let countA = 0;
   let countB = 0;
-  reflections.forEach((r: any) => {
+  reflections.forEach((r) => {
     const choice = r.steps[0]?.transcription;
     if (choice?.startsWith("Option A")) countA++;
     else if (choice?.startsWith("Option B")) countB++;

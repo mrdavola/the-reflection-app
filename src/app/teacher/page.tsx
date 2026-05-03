@@ -12,6 +12,7 @@ import {
   Sparkles,
   Zap,
 } from "lucide-react";
+import { AccountMenu } from "./account-menu";
 import { getFirebaseClientServices } from "@/lib/firebase/client";
 import type { Session } from "@/lib/models";
 
@@ -122,12 +123,7 @@ export default function TeacherPage() {
           </div>
           <div className="flex flex-wrap items-center gap-3">
             {isTeacherSession ? (
-              <button
-                onClick={signOutTeacher}
-                className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white px-5 py-2 text-sm font-bold text-black transition hover:-translate-y-0.5"
-              >
-                Sign out
-              </button>
+              <AccountMenu onSignOut={signOutTeacher} />
             ) : (
               <button
                 onClick={signInTeacher}

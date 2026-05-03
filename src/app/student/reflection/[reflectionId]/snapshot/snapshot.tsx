@@ -95,7 +95,9 @@ export default function Snapshot({ reflectionId }: { reflectionId: string }) {
                   {step.prompt}
                 </p>
               )}
-              <p className="mt-2 text-lg font-semibold leading-7">"{step.transcription}"</p>
+              <p className="mt-2 text-lg font-semibold leading-7">
+                &ldquo;{step.transcription}&rdquo;
+              </p>
               
               {step.followUpQuestion && (
                 <div className="mt-4 p-4 bg-white rounded-xl border-2 border-slate-200">

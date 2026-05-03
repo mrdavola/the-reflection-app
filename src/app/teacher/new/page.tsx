@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ImagePlus, Rocket, Sparkles, Upload, Wand2 } from "lucide-react";
+import { ArrowLeft, ImagePlus, Rocket, Upload, Wand2 } from "lucide-react";
+import { AccountMenu } from "../account-menu";
 
 export default function NewSessionPage() {
   const router = useRouter();
@@ -86,8 +87,8 @@ export default function NewSessionPage() {
             <ArrowLeft size={16} />
             Dashboard
           </Link>
-          <button
-            onClick={async () => {
+          <AccountMenu
+            onSignOut={async () => {
               const { getFirebaseClientServices } = await import("@/lib/firebase/client");
               const { signOut } = await import("firebase/auth");
               const { auth } = getFirebaseClientServices();
@@ -97,10 +98,7 @@ export default function NewSessionPage() {
               await fetch("/api/auth/logout", { method: "POST" });
               router.push("/teacher");
             }}
-            className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white px-5 py-2 text-sm font-bold text-black transition hover:-translate-y-0.5"
-          >
-            Sign out
-          </button>
+          />
         </header>
 
         <section className="mt-10 grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">

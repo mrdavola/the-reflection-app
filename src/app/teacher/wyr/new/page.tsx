@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Check, Sparkles, Zap } from "lucide-react";
+import { ArrowLeft, Check, Sparkles } from "lucide-react";
+import { AccountMenu } from "../../account-menu";
 
 const GRADES = ["K-2", "3-5", "6-8", "9-12"];
 const SUBJECTS = ["Math", "ELA", "Science", "Social Studies", "SEL"];
@@ -81,8 +82,8 @@ export default function WyrSetupPage() {
             <ArrowLeft size={16} />
             Dashboard
           </Link>
-          <button
-            onClick={async () => {
+          <AccountMenu
+            onSignOut={async () => {
               const { getFirebaseClientServices } = await import("@/lib/firebase/client");
               const { signOut } = await import("firebase/auth");
               const { auth } = getFirebaseClientServices();
@@ -92,10 +93,7 @@ export default function WyrSetupPage() {
               await fetch("/api/auth/logout", { method: "POST" });
               router.push("/teacher");
             }}
-            className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white px-5 py-2 text-sm font-bold text-black transition hover:-translate-y-0.5"
-          >
-            Sign out
-          </button>
+          />
         </header>
 
         <section className="mt-10 grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
@@ -106,7 +104,7 @@ export default function WyrSetupPage() {
               rather?
             </h1>
             <p className="mt-8 max-w-2xl text-2xl font-semibold leading-8">
-              Describe what you're teaching. ReflectAI generates three
+              Describe what you&apos;re teaching. ReflectAI generates three
               curriculum-aligned scenarios. Pick one and launch it.
             </p>
           </div>
